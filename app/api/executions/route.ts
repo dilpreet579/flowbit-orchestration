@@ -278,14 +278,16 @@ export async function GET() {
     console.log("=== Fetching executions from all sources ===")
 
     // Use Promise.allSettled to handle cases where one API fails but the other succeeds
-    const [langflowResult] = await Promise.allSettled([fetchLangflowExecutions()])
+    const [n8nResult, langflowResult] = await Promise.allSettled([fetchN8nExecutions(), fetchLangflowExecutions()])
 
     // Extract results or use empty arrays for failed promises
+    const n8nExecutions = n8nResult.status === "fulfilled" ? n8nResult.value : mockN8nExecutions
     const langflowExecutions = langflowResult.status === "fulfilled" ? langflowResult.value : mockLangflowExecutions
 
     console.log(`Langflow executions: ${langflowExecutions.length}`)
+    console.log(`N8n executions: ${n8nExecutions.length}`)
 
-    const allExecutions = [...langflowExecutions]
+    const allExecutions = [...n8nExecutions, ...langflowExecutions]
       .sort((a, b) => {
         // Parse dates for proper comparison
         const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
@@ -298,7 +300,10 @@ export async function GET() {
 
     // Determine if we're using any mock data
     const usingMockData =
+      n8nResult.status === "rejected" ||
       langflowResult.status === "rejected" ||
+      !process.env.N8N_BASE_URL ||
+      !process.env.N8N_API_KEY ||
       !process.env.LANGFLOW_BASE_URL ||
       !process.env.LANGFLOW_API_KEY
 
