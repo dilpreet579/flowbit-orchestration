@@ -16,7 +16,7 @@ function generateMockRun(id: string) {
 
   // Generate mock node outputs
   const nodeTypes = ["llm", "prompt", "memory", "vectorstore", "embedding", "parser", "tool"]
-  const nodes = {}
+  const nodes: Record<string, any> = {}
 
   for (let i = 0; i < Math.floor(Math.random() * 5) + 3; i++) {
     const nodeType = nodeTypes[Math.floor(Math.random() * nodeTypes.length)]

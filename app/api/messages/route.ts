@@ -200,21 +200,21 @@ function extractMessagesFromN8nExecution(execution: any): any[] {
             }
 
             // Generic message detection
-            if (data.message || data.content || data.body) {
+            if (execution.data.message || execution.data.content || execution.data.body) {
               messages.push({
                 id: `msg-${execution.executionId}-${nodeName}-${Date.now()}`,
                 executionId: execution.executionId || execution.id,
                 workflowId: execution.workflowId,
                 workflowName: execution.workflowName || "Unknown Workflow",
                 engine: "n8n",
-                direction: data.incoming ? "incoming" : "outgoing",
-                recipient: data.recipient || data.to || "unknown-recipient",
-                sender: data.sender || data.from,
-                content: data.message || data.content || data.body || "No content",
+                direction: execution.data.incoming ? "incoming" : "outgoing",
+                recipient: execution.data.recipient || execution.data.to || "unknown-recipient",
+                sender: execution.data.sender || execution.data.from,
+                content: execution.data.message || execution.data.content || execution.data.body || "No content",
                 timestamp: new Date().toLocaleString("de-DE"),
                 folderId: execution.folderId || "unassigned",
                 metadata: {
-                  ...data,
+                  ...execution.data,
                   // Remove redundant fields from metadata
                   message: undefined,
                   content: undefined,
