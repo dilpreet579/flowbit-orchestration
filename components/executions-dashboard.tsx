@@ -528,14 +528,24 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                   Previous
                 </Button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Calculate page numbers to show around current page
                   let pageNum = currentPage - 2 + i
-                  if (pageNum < 1) pageNum = i + 1
-                  if (pageNum > totalPages) pageNum = totalPages - (4 - i)
+                  
+                  // Adjust if we're near the start
+                  if (currentPage <= 3) {
+                    pageNum = i + 1
+                  }
+                  // Adjust if we're near the end
+                  else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  }
+                  
+                  // Skip if out of bounds
                   if (pageNum < 1 || pageNum > totalPages) return null
 
                   return (
                     <Button
-                      key={pageNum}
+                      key={`page-${pageNum}`}
                       variant={currentPage === pageNum ? "default" : "outline"}
                       size="sm"
                       onClick={() => handlePageChange(pageNum)}
