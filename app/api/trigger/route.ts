@@ -1,20 +1,6 @@
 import { NextResponse } from "next/server"
 import { scheduleJob } from "@/lib/cron"
 
-// Mock response for when API connections fail
-const mockTriggerResponse = {
-  n8n: {
-    success: true,
-    executionId: "mock-execution-id",
-    message: "Workflow triggered successfully (mock)",
-  },
-  langflow: {
-    success: true,
-    run_id: "mock-run-id",
-    message: "Flow triggered successfully (mock)",
-  },
-}
-
 // Create a timeout promise
 function createTimeoutPromise(ms: number) {
   return new Promise((_, reject) => {
@@ -23,7 +9,7 @@ function createTimeoutPromise(ms: number) {
 }
 
 // Fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000) {
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 7000) {
   try {
     const fetchPromise = fetch(url, options)
     const timeoutPromise = createTimeoutPromise(timeoutMs)
@@ -34,51 +20,6 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5
   }
 }
 
-async function triggerN8nWorkflow(workflowId: string, payload?: any, triggerType?: string) {
-  // Check if environment variables are set
-  const n8nBaseUrl = process.env.N8N_BASE_URL
-  const n8nApiKey = process.env.N8N_API_KEY
-
-  if (!n8nBaseUrl || !n8nApiKey) {
-    console.log("N8N environment variables not configured, using mock response")
-    return mockTriggerResponse.n8n
-  }
-
-  try {
-    let url = `${n8nBaseUrl}/rest/workflows/${workflowId}/run`
-
-    // If it's a webhook trigger, use the webhook URL instead
-    if (triggerType === "webhook") {
-      url = `${n8nBaseUrl}/webhook/${workflowId}`
-    }
-
-    console.log(`Triggering n8n workflow at: ${url}`)
-
-    const response = await fetchWithTimeout(
-      url,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${n8nApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload || {}),
-      },
-      5000,
-    )
-
-    if (!response.ok) {
-      throw new Error(`n8n API error: ${response.status} ${response.statusText}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error("Error triggering n8n workflow:", error)
-    console.log("Using mock n8n trigger response")
-    return mockTriggerResponse.n8n
-  }
-}
-
 async function triggerLangflowWorkflow(flowId: string, payload?: any) {
   // Check if environment variables are set
   const langflowBaseUrl = process.env.LANGFLOW_BASE_URL
@@ -86,10 +27,15 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
 
   if (!langflowBaseUrl || !langflowApiKey) {
     console.log("Langflow environment variables not configured, using mock response")
-    return mockTriggerResponse.langflow
+    return {
+      success: false,
+      run_id: "mock-run-id",
+      message: "Flow triggered failed (mock)",
+    }
   }
 
   try {
+    console.log("FlowId:", flowId)
     const url = `${langflowBaseUrl}/api/v1/run/${flowId}`
     console.log(`Triggering Langflow workflow at: ${url}`)
 
@@ -112,7 +58,6 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
         },
         body: JSON.stringify(requestBody),
       },
-      5000,
     )
 
     if (!response.ok) {
@@ -123,7 +68,11 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
   } catch (error) {
     console.error("Error triggering Langflow workflow:", error)
     console.log("Using mock Langflow trigger response")
-    return mockTriggerResponse.langflow
+    return {
+      success: false,
+      run_id: "mock-run-id",
+      message: "Flow triggered failed (mock)",
+    }
   }
 }
 
@@ -171,14 +120,13 @@ export async function POST(request: Request) {
     // Handle different trigger types
     if (triggerType === "schedule" && cronExpression) {
       result = await scheduleWorkflow(workflowId, engine, cronExpression, payload)
-    } else if (engine === "n8n") {
-      result = await triggerN8nWorkflow(workflowId, payload, triggerType)
     } else if (engine === "langflow") {
       result = await triggerLangflowWorkflow(workflowId, payload)
     } else {
       return NextResponse.json({ error: "Unsupported engine" }, { status: 400 })
     }
 
+    console.log("Result:", result)
     return NextResponse.json({ success: true, result })
   } catch (error) {
     console.error("Error triggering workflow:", error)
