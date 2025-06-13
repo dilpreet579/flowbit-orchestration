@@ -30,7 +30,7 @@ export function CreateWorkflowModal({ open, onOpenChange, folders }: CreateWorkf
       id: "langflow",
       name: "Langflow",
       description: "Visual framework for building multi-agent and RAG applications",
-      url: "http://localhost:7860/flow-builder",
+      url: "http://localhost:7860/",
       color: "bg-green-100 text-green-800",
     },
     {
