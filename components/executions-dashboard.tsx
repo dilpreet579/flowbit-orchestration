@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Play,
   Clock,
@@ -27,7 +27,6 @@ interface Execution {
   id: string
   workflowId: string
   workflowName: string
-  engine: string
   status: string
   duration: string
   startTime: string
@@ -45,20 +44,31 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [engineFilter, setEngineFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [selectedExecution, setSelectedExecution] = useState<{ id: string; engine: string } | null>(null)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [selectedExecution, setSelectedExecution] = useState<string | null>(null)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [triggerModalOpen, setTriggerModalOpen] = useState(false)
-  const [selectedWorkflow, setSelectedWorkflow] = useState<{ id: string; name: string; engine: string } | null>(null)
+  const [selectedWorkflow, setSelectedWorkflow] = useState<{ id: string; name: string } | null>(null)
   const [isUsingMockData, setIsUsingMockData] = useState(false)
+  const [runDetails, setRunDetails] = useState<any>(null)
+  const [loadingRunDetails, setLoadingRunDetails] = useState(false)
+  const [runDetailsError, setRunDetailsError] = useState<string | null>(null)
+  const [streamData, setStreamData] = useState<any[]>([])
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamPaused, setStreamPaused] = useState(false)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     fetchExecutions()
     // Set up polling for real-time updates
     const interval = setInterval(fetchExecutions, 30000) // Refresh every 30 seconds
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
   }, [])
 
   const fetchExecutions = async (showRefreshing = false) => {
@@ -70,8 +80,8 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       }
       setError(null)
 
-      console.log("Fetching executions from API...")
-      const response = await fetch("/api/executions")
+      console.log("Fetching Langflow runs...")
+      const response = await fetch("/api/langflow/runs")
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`)
@@ -80,11 +90,37 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       const data = await response.json()
       console.log("API response:", data)
 
-      // Check if we're using mock data
-      setIsUsingMockData(data.usingMockData || false)
-      setExecutions(data.executions || [])
+      // Convert Langflow runs to our execution format
+      const formattedExecutions = (data.runs || []).map((run: any) => ({
+        id: run.id,
+        workflowId: run.flow_id || "unknown",
+        workflowName: run.flow_name || "Unknown Flow",
+        status: run.status === "SUCCESS" ? "success" : run.status === "ERROR" ? "error" : "running",
+        duration: run.duration ? `${run.duration.toFixed(1)}s` : "N/A",
+        startTime: new Date(run.timestamp)
+          .toLocaleDateString("de-DE", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+          .replace(",", ""),
+        triggerType: run.trigger_type || "manual",
+        folderId: run.tags?.[0] || "unassigned",
+      }))
 
-      console.log(`Loaded ${data.executions?.length || 0} executions`)
+      // Sort executions by start time (newest first)
+      formattedExecutions.sort((a: Execution, b: Execution) => {
+        const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
+        const dateB = b.startTime.split(" ")[0].split(".").reverse().join("-") + " " + b.startTime.split(" ")[1]
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      })
+
+      setExecutions(formattedExecutions)
+      setIsUsingMockData(data.usingMockData || false)
+      console.log(`Loaded ${formattedExecutions.length} executions`)
     } catch (error) {
       console.error("Error fetching executions:", error)
       setError("Failed to fetch execution data. The dashboard will show mock data.")
@@ -93,11 +129,20 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       // Set some fallback mock data if the API completely fails
       setExecutions([
         {
+          id: "fallback-1",
+          workflowId: "wf-1",
+          workflowName: "Customer Support Bot",
+          status: "success",
+          duration: "12.5s",
+          startTime: "15.01.2024 10:20:08",
+          triggerType: "manual",
+          folderId: "support",
+        },
+        {
           id: "fallback-2",
           workflowId: "wf-5",
           workflowName: "ETL Pipeline",
-          engine: "langflow",
-          status: "success",
+          status: "error",
           duration: "45.2s",
           startTime: "15.01.2024 14:20:08",
           triggerType: "schedule",
@@ -110,10 +155,93 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     }
   }
 
+  const fetchRunDetails = async () => {
+    if (!selectedExecution) return
+
+    try {
+      setLoadingRunDetails(true)
+      setRunDetailsError(null)
+      setRunDetails(null)
+
+      console.log(`Fetching run details for ID: ${selectedExecution}`)
+      const response = await fetch(`/api/langflow/runs/${selectedExecution}`)
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("API response:", data)
+
+      setRunDetails(data.run || null)
+
+      // If the run is in progress, start streaming
+      if (data.run?.status === "RUNNING" && !isStreaming) {
+        startStreaming()
+      }
+    } catch (error) {
+      console.error("Error fetching run details:", error)
+      setRunDetailsError(`Failed to fetch run details: ${(error as Error).message}`)
+    } finally {
+      setLoadingRunDetails(false)
+    }
+  }
+
+  const startStreaming = () => {
+    if (!selectedExecution || (isStreaming && !streamPaused)) return
+
+    try {
+      setIsStreaming(true)
+      setStreamPaused(false)
+
+      // Close existing connection if any
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+
+      const eventSource = new EventSource(`/api/langflow/runs/${selectedExecution}/stream`)
+      eventSourceRef.current = eventSource
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          setStreamData((prev) => [...prev, data])
+
+          // If we receive an end event, refresh the run details and close the stream
+          if (data.type === "end" || data.status === "SUCCESS" || data.status === "ERROR") {
+            fetchRunDetails()
+            eventSource.close()
+            eventSourceRef.current = null
+            setIsStreaming(false)
+          }
+        } catch (error) {
+          console.error("Error parsing stream data:", error)
+        }
+      }
+
+      eventSource.onerror = (error) => {
+        console.error("Stream error:", error)
+        eventSource.close()
+        eventSourceRef.current = null
+        setIsStreaming(false)
+      }
+    } catch (error) {
+      console.error("Error setting up event source:", error)
+      setIsStreaming(false)
+    }
+  }
+
+  const pauseStreaming = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+      setStreamPaused(true)
+    }
+  }
+
   const filteredExecutions = executions.filter((execution) => {
     if (selectedFolder && execution.folderId !== selectedFolder) return false
     if (statusFilter !== "all" && execution.status !== statusFilter) return false
-    if (engineFilter !== "all" && execution.engine !== engineFilter) return false
     return true
   })
 
@@ -128,7 +256,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       case "error":
         return <XCircle className="w-4 h-4 text-red-600" />
       case "running":
-        return <Clock className="w-4 h-4 text-blue-600" />
+        return <Clock className="w-4 h-4 text-blue-600 animate-pulse" />
       default:
         return <Clock className="w-4 h-4 text-gray-600" />
     }
@@ -147,17 +275,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     }
   }
 
-  const getEngineBadge = (engine: string) => {
-    switch (engine) {
-      case "langflow":
-        return <Badge className="bg-green-100 text-green-800">Langflow</Badge>
-      case "langsmith":
-        return <Badge className="bg-purple-100 text-purple-800">LangSmith</Badge>
-      default:
-        return <Badge variant="outline">{engine}</Badge>
-    }
-  }
-
   const getTriggerIcon = (triggerType: string) => {
     switch (triggerType) {
       case "email":
@@ -173,14 +290,23 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     }
   }
 
-  const handleTriggerWorkflow = (workflowId: string, workflowName: string, engine: string) => {
-    setSelectedWorkflow({ id: workflowId, name: workflowName, engine })
+  const handleTriggerWorkflow = (workflowId: string, workflowName: string) => {
+    setSelectedWorkflow({ id: workflowId, name: workflowName })
     setTriggerModalOpen(true)
   }
 
-  const handleViewDetails = (executionId: string, engine: string) => {
-    setSelectedExecution({ id: executionId, engine })
+  const handleViewDetails = (executionId: string) => {
+    setSelectedExecution(executionId)
     setDetailsModalOpen(true)
+
+    // Reset stream data and run details
+    setStreamData([])
+    setRunDetails(null)
+
+    // Fetch the run details
+    setTimeout(() => {
+      fetchRunDetails()
+    }, 0)
   }
 
   const handleRefresh = () => {
@@ -218,8 +344,8 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertTitle className="text-amber-800">Using Mock Data</AlertTitle>
           <AlertDescription className="text-amber-700">
-            The dashboard is currently displaying mock data because the API connections to Langflow are not available. To
-            connect to real instances, please configure your environment variables in the .env.local file.
+            The dashboard is currently displaying mock data because the API connection to Langflow is not available. To
+            connect to a real instance, please configure your environment variables in the .env.local file.
           </AlertDescription>
         </Alert>
       )}
@@ -289,17 +415,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
           </SelectContent>
         </Select>
 
-        <Select value={engineFilter} onValueChange={setEngineFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by engine" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Engines</SelectItem>
-            <SelectItem value="langflow">Langflow</SelectItem>
-            <SelectItem value="langsmith">LangSmith</SelectItem>
-          </SelectContent>
-        </Select>
-
         <Button onClick={handleRefresh} variant="outline" disabled={refreshing}>
           {refreshing ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
           Refresh
@@ -309,12 +424,12 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       {/* Executions Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Executions</CardTitle>
+          <CardTitle>Workflow Executions</CardTitle>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Rows per page:</span>
             <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
               <SelectTrigger className="w-16 h-8">
-                <SelectValue placeholder="5" />
+                <SelectValue placeholder="10" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="5">5</SelectItem>
@@ -331,7 +446,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
               <Clock className="w-8 h-8 mx-auto mb-2" />
               <p>No executions found matching your filters</p>
               {isUsingMockData && (
-                <p className="text-sm mt-2">Configure your API connections to see real execution data</p>
+                <p className="text-sm mt-2">Configure your API connection to see real execution data</p>
               )}
             </div>
           ) : (
@@ -340,7 +455,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                 <TableRow>
                   <TableHead>Status</TableHead>
                   <TableHead>Workflow</TableHead>
-                  <TableHead>Engine</TableHead>
                   <TableHead>Trigger</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Start Time</TableHead>
@@ -357,7 +471,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{execution.workflowName}</TableCell>
-                    <TableCell>{getEngineBadge(execution.engine)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getTriggerIcon(execution.triggerType)}
@@ -371,7 +484,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewDetails(execution.id, execution.engine)}
+                          onClick={() => handleViewDetails(execution.id)}
                           className="h-8"
                         >
                           <Eye className="w-3 h-3 mr-1" />
@@ -380,9 +493,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() =>
-                            handleTriggerWorkflow(execution.workflowId, execution.workflowName, execution.engine)
-                          }
+                          onClick={() => handleTriggerWorkflow(execution.workflowId, execution.workflowName)}
                           className="h-8"
                         >
                           <Play className="w-3 h-3 mr-1" />
@@ -459,8 +570,16 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       <ExecutionDetailsModal
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
-        executionId={selectedExecution?.id || null}
-        engine={selectedExecution?.engine || null}
+        executionId={selectedExecution}
+        runDetails={runDetails}
+        fetchRunDetails={fetchRunDetails}
+        loading={loadingRunDetails}
+        error={runDetailsError}
+        streamData={streamData}
+        isStreaming={isStreaming}
+        startStreaming={startStreaming}
+        pauseStreaming={pauseStreaming}
+        streamPaused={streamPaused}
       />
 
       <TriggerWorkflowModal
@@ -468,7 +587,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
         onOpenChange={setTriggerModalOpen}
         workflowId={selectedWorkflow?.id || null}
         workflowName={selectedWorkflow?.name || null}
-        engine={selectedWorkflow?.engine || null}
+        engine="langflow"
       />
     </div>
   )

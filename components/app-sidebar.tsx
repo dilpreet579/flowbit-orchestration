@@ -164,24 +164,6 @@ export function AppSidebar({ selectedFolder, onFolderSelect, onManageFolders, fo
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* LangFlow Features Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel>LangFlow Features</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onNavigate && onNavigate("/langflow/runs")}
-                  className="w-full justify-start"
-                >
-                  <Clock className="w-4 h-4" />
-                  <span>Recent Runs</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-gray-200 p-4">
