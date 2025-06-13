@@ -77,6 +77,14 @@ export function ExecutionDetailsModal({
     }
   }
 
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return new Date(timestamp).toLocaleString()
+    } catch (e) {
+      return timestamp
+    }
+  }
+
   const extractMessages = (runData: any) => {
     if (!runData || !runData.outputs) return []
 
@@ -126,6 +134,7 @@ export function ExecutionDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogTitle>Loading...</DialogTitle>
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7575e4]"></div>
           </div>
@@ -153,6 +162,7 @@ export function ExecutionDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogTitle>No run details available</DialogTitle>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <Info className="w-12 h-12 text-blue-500 mx-auto mb-4" />
@@ -192,7 +202,7 @@ export function ExecutionDetailsModal({
             </Badge>
           </DialogTitle>
           <DialogDescription>
-            Run ID: {runDetails.id} • Started: {new Date(runDetails.timestamp).toLocaleString()}
+            Run ID: {runDetails.id} • Started: {formatTimestamp(runDetails.timestamp)}
           </DialogDescription>
         </DialogHeader>
 
@@ -255,7 +265,7 @@ export function ExecutionDetailsModal({
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500">Timestamp</h3>
-                    <p className="mt-1">{new Date(runDetails.timestamp).toLocaleString()}</p>
+                    <p className="mt-1">{formatTimestamp(runDetails.timestamp)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -411,7 +421,7 @@ export function ExecutionDetailsModal({
                           </Badge>
                           <div className="flex-1">
                             <div className="text-xs text-gray-500 mb-1">
-                              {log.timestamp || new Date(runDetails.timestamp).toLocaleString()}
+                              {log.timestamp || formatTimestamp(runDetails.timestamp)}
                             </div>
                             <pre
                               className={`text-sm whitespace-pre-wrap ${
@@ -455,13 +465,15 @@ export function ExecutionDetailsModal({
                     onClick={() => copyToClipboard(JSON.stringify(runDetails, null, 2))}
                   >
                     <Copy className="w-3 h-3 mr-1" />
-                    Copy All
+                    Copy
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px]">
-                  <pre className="text-xs whitespace-pre-wrap">{JSON.stringify(runDetails, null, 2)}</pre>
+                <ScrollArea className="h-[500px]">
+                  <pre className="text-xs bg-gray-50 p-3 rounded whitespace-pre-wrap">
+                    {JSON.stringify(runDetails, null, 2)}
+                  </pre>
                 </ScrollArea>
               </CardContent>
             </Card>

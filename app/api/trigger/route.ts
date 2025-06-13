@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { scheduleJob } from "@/lib/cron"
+import { storeExecution, updateExecution } from "@/lib/db"
+import { v4 as uuidv4 } from "uuid"
 
 // Create a timeout promise
 function createTimeoutPromise(ms: number) {
@@ -26,18 +28,55 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
   const langflowApiKey = process.env.LANGFLOW_API_KEY
 
   if (!langflowBaseUrl || !langflowApiKey) {
-    console.log("Langflow environment variables not configured, using mock response")
-    return {
-      success: false,
-      run_id: "mock-run-id",
-      message: "Flow triggered failed (mock)",
-    }
+    console.log("Langflow environment variables not configured")
+    throw new Error("Langflow API not configured")
   }
 
   try {
-    console.log("FlowId:", flowId)
-    const url = `${langflowBaseUrl}/api/v1/run/${flowId}`
-    console.log(`Triggering Langflow workflow at: ${url}`)
+    // First, get the flow details to get the flow name
+    const flowDetailsUrl = `${langflowBaseUrl}/api/v1/flows/${flowId}`
+    console.log(`Fetching flow details from: ${flowDetailsUrl}`)
+
+    const flowDetailsResponse = await fetchWithTimeout(flowDetailsUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": langflowApiKey,
+      },
+    })
+
+    if (!flowDetailsResponse.ok) {
+      throw new Error(`Langflow API error: ${flowDetailsResponse.status} ${flowDetailsResponse.statusText}`)
+    }
+
+    const flowDetails = await flowDetailsResponse.json()
+    const flowName = flowDetails.name || "Unknown Flow"
+
+    // Create a new execution record with initial status
+    const executionId = uuidv4()
+    const timestamp = new Date().toISOString()
+
+    await storeExecution({
+      id: executionId,
+      flow_id: flowId,
+      flow_name: flowName,
+      status: "RUNNING",
+      timestamp: timestamp,
+      trigger_type: payload?.triggerType || "manual",
+      inputs: payload?.inputPayload || {},
+      tags: flowDetails.tags || [],
+      logs: [
+        {
+          level: "INFO",
+          message: "Flow execution started",
+          timestamp: timestamp,
+        },
+      ],
+    })
+
+    // Now trigger the flow
+    const triggerUrl = `${langflowBaseUrl}/api/v1/run/${flowId}`
+    console.log(`Triggering Langflow workflow at: ${triggerUrl}`)
 
     // Use the provided payload or a default one
     const requestBody = payload?.inputPayload || {
@@ -48,31 +87,60 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
 
     console.log("Request body:", requestBody)
 
-    const response = await fetchWithTimeout(
-      url,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": langflowApiKey,
-        },
-        body: JSON.stringify(requestBody),
+    const response = await fetchWithTimeout(triggerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": langflowApiKey,
       },
-    )
+      body: JSON.stringify(requestBody),
+    })
 
     if (!response.ok) {
+      // Update execution with error status
+      await updateExecution(executionId, {
+        status: "ERROR",
+        error: `Langflow API error: ${response.status} ${response.statusText}`,
+        logs: [
+          {
+            level: "ERROR",
+            message: `Flow execution failed: ${response.status} ${response.statusText}`,
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      })
+
       throw new Error(`Langflow API error: ${response.status} ${response.statusText}`)
     }
 
-    return await response.json()
+    const result = await response.json()
+
+    // Extract outputs from the response
+    const outputs = result.outputs?.[0]?.outputs?.[0]?.outputs || {}
+
+    // Update the execution with success status and outputs
+    await updateExecution(executionId, {
+      status: "SUCCESS",
+      duration: (new Date().getTime() - new Date(timestamp).getTime()) / 1000,
+      outputs: outputs,
+      logs: [
+        {
+          level: "INFO",
+          message: "Flow execution completed successfully",
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    })
+
+    return {
+      success: true,
+      run_id: executionId,
+      message: "Flow triggered successfully",
+      result,
+    }
   } catch (error) {
     console.error("Error triggering Langflow workflow:", error)
-    console.log("Using mock Langflow trigger response")
-    return {
-      success: false,
-      run_id: "mock-run-id",
-      message: "Flow triggered failed (mock)",
-    }
+    throw error
   }
 }
 
@@ -130,7 +198,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, result })
   } catch (error) {
     console.error("Error triggering workflow:", error)
-    return NextResponse.json({ error: "Failed to trigger workflow" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to trigger workflow", message: (error as Error).message },
+      { status: 500 },
+    )
   }
 }
 

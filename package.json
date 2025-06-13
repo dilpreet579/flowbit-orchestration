@@ -57,12 +57,16 @@
     "react-resizable-panels": "latest",
     "recharts": "latest",
     "sonner": "latest",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^11.1.0",
     "vaul": "latest",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

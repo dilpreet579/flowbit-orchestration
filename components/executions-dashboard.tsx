@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import {
   Play,
   Clock,
@@ -25,13 +25,39 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Execution {
   id: string
-  workflowId: string
-  workflowName: string
+  flow_id: string
+  flow_name: string
   status: string
-  duration: string
-  startTime: string
-  triggerType: string
-  folderId: string
+  duration: number | null
+  timestamp: string
+  trigger_type: string
+  tags: string[] | null
+}
+
+interface RunDetails {
+  id: string
+  flow_id: string
+  flow_name: string
+  status: string
+  duration: number | null
+  timestamp: string
+  trigger_type: string
+  tags: string[] | null
+  error?: string
+  inputs?: Record<string, any>
+  outputs?: Record<string, any>
+  logs?: Array<{
+    level: string
+    message: string
+    timestamp: string
+  }>
+}
+
+interface StreamData {
+  type: string
+  status?: string
+  data?: any
+  timestamp: string
 }
 
 interface ExecutionsDashboardProps {
@@ -50,11 +76,10 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [triggerModalOpen, setTriggerModalOpen] = useState(false)
   const [selectedWorkflow, setSelectedWorkflow] = useState<{ id: string; name: string } | null>(null)
-  const [isUsingMockData, setIsUsingMockData] = useState(false)
-  const [runDetails, setRunDetails] = useState<any>(null)
+  const [runDetails, setRunDetails] = useState<RunDetails | null>(null)
   const [loadingRunDetails, setLoadingRunDetails] = useState(false)
   const [runDetailsError, setRunDetailsError] = useState<string | null>(null)
-  const [streamData, setStreamData] = useState<any[]>([])
+  const [streamData, setStreamData] = useState<StreamData[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamPaused, setStreamPaused] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -80,7 +105,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       }
       setError(null)
 
-      console.log("Fetching Langflow runs...")
+      console.log("Fetching executions...")
       const response = await fetch("/api/langflow/runs")
 
       if (!response.ok) {
@@ -90,65 +115,12 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       const data = await response.json()
       console.log("API response:", data)
 
-      // Convert Langflow runs to our execution format
-      const formattedExecutions = (data.runs || []).map((run: any) => ({
-        id: run.id,
-        workflowId: run.flow_id || "unknown",
-        workflowName: run.flow_name || "Unknown Flow",
-        status: run.status === "SUCCESS" ? "success" : run.status === "ERROR" ? "error" : "running",
-        duration: run.duration ? `${run.duration.toFixed(1)}s` : "N/A",
-        startTime: new Date(run.timestamp)
-          .toLocaleDateString("de-DE", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          })
-          .replace(",", ""),
-        triggerType: run.trigger_type || "manual",
-        folderId: run.tags?.[0] || "unassigned",
-      }))
-
-      // Sort executions by start time (newest first)
-      formattedExecutions.sort((a: Execution, b: Execution) => {
-        const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
-        const dateB = b.startTime.split(" ")[0].split(".").reverse().join("-") + " " + b.startTime.split(" ")[1]
-        return new Date(dateB).getTime() - new Date(dateA).getTime()
-      })
-
-      setExecutions(formattedExecutions)
-      setIsUsingMockData(data.usingMockData || false)
-      console.log(`Loaded ${formattedExecutions.length} executions`)
+      setExecutions(data.runs || [])
+      console.log(`Loaded ${data.runs?.length || 0} executions`)
     } catch (error) {
       console.error("Error fetching executions:", error)
-      setError("Failed to fetch execution data. The dashboard will show mock data.")
-      setIsUsingMockData(true)
-
-      // Set some fallback mock data if the API completely fails
-      setExecutions([
-        {
-          id: "fallback-1",
-          workflowId: "wf-1",
-          workflowName: "Customer Support Bot",
-          status: "success",
-          duration: "12.5s",
-          startTime: "15.01.2024 10:20:08",
-          triggerType: "manual",
-          folderId: "support",
-        },
-        {
-          id: "fallback-2",
-          workflowId: "wf-5",
-          workflowName: "ETL Pipeline",
-          status: "error",
-          duration: "45.2s",
-          startTime: "15.01.2024 14:20:08",
-          triggerType: "schedule",
-          folderId: "data-processing",
-        },
-      ])
+      setError("Failed to fetch execution data.")
+      setExecutions([])
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -239,18 +211,42 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     }
   }
 
-  const filteredExecutions = executions.filter((execution) => {
-    if (selectedFolder && execution.folderId !== selectedFolder) return false
-    if (statusFilter !== "all" && execution.status !== statusFilter) return false
-    return true
-  })
+  const filteredExecutions = useMemo(() => {
+    return executions.filter((execution) => {
+      if (selectedFolder && execution.tags && !execution.tags.includes(selectedFolder)) return false
+      if (statusFilter !== "all" && execution.status.toLowerCase() !== statusFilter) return false
+      return true
+    })
+  }, [executions, selectedFolder, statusFilter])
 
-  // Calculate pagination
+  const paginatedExecutions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredExecutions.slice(start, end)
+  }, [filteredExecutions, currentPage, itemsPerPage])
+
   const totalPages = Math.ceil(filteredExecutions.length / itemsPerPage)
-  const paginatedExecutions = filteredExecutions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const getPageNumbers = useMemo(() => {
+    const pages: number[] = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+
+    return pages
+  }, [currentPage, totalPages])
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
       case "success":
         return <CheckCircle className="w-4 h-4 text-green-600" />
       case "error":
@@ -263,7 +259,8 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
   }
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const normalizedStatus = status.toLowerCase()
+    switch (normalizedStatus) {
       case "success":
         return <Badge className="bg-green-100 text-green-800">Success</Badge>
       case "error":
@@ -276,7 +273,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
   }
 
   const getTriggerIcon = (triggerType: string) => {
-    switch (triggerType) {
+    switch (triggerType.toLowerCase()) {
       case "email":
         return <Mail className="w-4 h-4 text-gray-600" />
       case "webhook":
@@ -313,9 +310,32 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     fetchExecutions(true)
   }
 
-  const successCount = filteredExecutions.filter((e) => e.status === "success").length
-  const errorCount = filteredExecutions.filter((e) => e.status === "error").length
-  const runningCount = filteredExecutions.filter((e) => e.status === "running").length
+  const formatDuration = (duration: number | null) => {
+    if (duration === null) return "N/A"
+    return `${duration.toFixed(1)}s`
+  }
+
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp)
+      return date
+        .toLocaleDateString("de-DE", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+        .replace(",", "")
+    } catch (e) {
+      return timestamp
+    }
+  }
+
+  const successCount = filteredExecutions.filter((e) => e.status.toLowerCase() === "success").length
+  const errorCount = filteredExecutions.filter((e) => e.status.toLowerCase() === "error").length
+  const runningCount = filteredExecutions.filter((e) => e.status.toLowerCase() === "running").length
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -339,17 +359,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
 
   return (
     <div className="space-y-6">
-      {isUsingMockData && (
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-800">Using Mock Data</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            The dashboard is currently displaying mock data because the API connection to Langflow is not available. To
-            connect to a real instance, please configure your environment variables in the .env.local file.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertTriangle className="h-4 w-4" />
@@ -445,9 +454,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
             <div className="text-center py-8 text-gray-500">
               <Clock className="w-8 h-8 mx-auto mb-2" />
               <p>No executions found matching your filters</p>
-              {isUsingMockData && (
-                <p className="text-sm mt-2">Configure your API connection to see real execution data</p>
-              )}
             </div>
           ) : (
             <Table>
@@ -470,15 +476,15 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                         {getStatusBadge(execution.status)}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{execution.workflowName}</TableCell>
+                    <TableCell className="font-medium">{execution.flow_name}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {getTriggerIcon(execution.triggerType)}
-                        <span className="capitalize">{execution.triggerType}</span>
+                        {getTriggerIcon(execution.trigger_type)}
+                        <span className="capitalize">{execution.trigger_type}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{execution.duration}</TableCell>
-                    <TableCell>{execution.startTime}</TableCell>
+                    <TableCell>{formatDuration(execution.duration)}</TableCell>
+                    <TableCell>{formatTimestamp(execution.timestamp)}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
@@ -493,7 +499,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleTriggerWorkflow(execution.workflowId, execution.workflowName)}
+                          onClick={() => handleTriggerWorkflow(execution.flow_id, execution.flow_name)}
                           className="h-8"
                         >
                           <Play className="w-3 h-3 mr-1" />
@@ -527,34 +533,17 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
                 >
                   Previous
                 </Button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // Calculate page numbers to show around current page
-                  let pageNum = currentPage - 2 + i
-                  
-                  // Adjust if we're near the start
-                  if (currentPage <= 3) {
-                    pageNum = i + 1
-                  }
-                  // Adjust if we're near the end
-                  else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  }
-                  
-                  // Skip if out of bounds
-                  if (pageNum < 1 || pageNum > totalPages) return null
-
-                  return (
-                    <Button
-                      key={`page-${pageNum}`}
-                      variant={currentPage === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(pageNum)}
-                      className={currentPage === pageNum ? "bg-[#7575e4] hover:bg-[#6565d4]" : ""}
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                })}
+                {getPageNumbers.map((pageNum) => (
+                  <Button
+                    key={`page-${pageNum}`}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className={currentPage === pageNum ? "bg-[#7575e4] hover:bg-[#6565d4]" : ""}
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
                 <Button
                   variant="outline"
                   size="sm"
