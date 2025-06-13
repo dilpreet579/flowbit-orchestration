@@ -107,8 +107,8 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${langflowApiKey}`,
           "Content-Type": "application/json",
+          "x-api-key": langflowApiKey,
         },
         body: JSON.stringify(requestBody),
       },
