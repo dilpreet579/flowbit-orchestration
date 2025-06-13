@@ -1,0 +1,21 @@
+services:
+  redis:
+    image: redis:7
+    container_name: langflow-redis3
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: langflow-app3
+    ports:
+      - "7860:7860"
+    environment:
+      - LANGFLOW_DEFAULT_FLOWS_PATH=flows/
+      - LANGFLOW_REDIS_URL=redis://langflow-redis:6379/0
+    volumes:
+      - ./flows:/app/flows
+    depends_on:
+      - redis
+    restart: unless-stopped 
