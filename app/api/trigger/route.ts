@@ -52,6 +52,13 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
     const flowDetails = await flowDetailsResponse.json()
     const flowName = flowDetails.name || "Unknown Flow"
 
+    //the nodes
+    const nodeIds: { [key: string]: { status: string } } = {}
+    flowDetails.data.nodes.forEach((node: any) => {
+      const id = node.data.id
+      nodeIds[id] = { status: "success" }
+    })
+
     // Create a new execution record with initial status
     const executionId = uuidv4()
     const timestamp = new Date().toISOString()
@@ -116,13 +123,13 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
     const result = await response.json()
 
     // Extract outputs from the response
-    const outputs = result.outputs?.[0]?.outputs?.[0]?.outputs || {}
+    // const outputs = result.outputs?.[0]?.outputs?.[0]?.outputs || {}
 
     // Update the execution with success status and outputs
     await updateExecution(executionId, {
       status: "SUCCESS",
       duration: (new Date().getTime() - new Date(timestamp).getTime()) / 1000,
-      outputs: outputs,
+      outputs: nodeIds,
       logs: [
         {
           level: "INFO",
