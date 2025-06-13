@@ -93,17 +93,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       // Set some fallback mock data if the API completely fails
       setExecutions([
         {
-          id: "fallback-1",
-          workflowId: "wf-1",
-          workflowName: "Email Processor",
-          engine: "n8n",
-          status: "success",
-          duration: "2.3s",
-          startTime: "15.01.2024 14:30:22",
-          triggerType: "webhook",
-          folderId: "unassigned",
-        },
-        {
           id: "fallback-2",
           workflowId: "wf-5",
           workflowName: "ETL Pipeline",
@@ -160,8 +149,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
 
   const getEngineBadge = (engine: string) => {
     switch (engine) {
-      case "n8n":
-        return <Badge className="bg-blue-100 text-blue-800">n8n</Badge>
       case "langflow":
         return <Badge className="bg-green-100 text-green-800">Langflow</Badge>
       case "langsmith":
@@ -231,8 +218,8 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
           <AlertTriangle className="h-4 w-4 text-amber-600" />
           <AlertTitle className="text-amber-800">Using Mock Data</AlertTitle>
           <AlertDescription className="text-amber-700">
-            The dashboard is currently displaying mock data because the API connections to n8n and/or Langflow are not
-            available. To connect to real instances, please configure your environment variables in the .env.local file.
+            The dashboard is currently displaying mock data because the API connections to Langflow are not available. To
+            connect to real instances, please configure your environment variables in the .env.local file.
           </AlertDescription>
         </Alert>
       )}
@@ -308,7 +295,6 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Engines</SelectItem>
-            <SelectItem value="n8n">n8n</SelectItem>
             <SelectItem value="langflow">Langflow</SelectItem>
             <SelectItem value="langsmith">LangSmith</SelectItem>
           </SelectContent>

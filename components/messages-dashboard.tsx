@@ -71,29 +71,39 @@ export function MessagesDashboard({ selectedFolder }: MessagesDashboardProps) {
       // Set some fallback mock data if the API completely fails
       setMessages([
         {
-          id: "msg-1",
-          workflowId: "wf-1",
-          workflowName: "Email Processor",
-          engine: "n8n",
-          direction: "outgoing",
-          content: "Thank you for your inquiry. We've received your request and will get back to you shortly.",
-          timestamp: "15.01.2024 14:30:22",
-          recipient: "customer@example.com",
-          executionId: "exec-1",
-          folderId: "unassigned",
-        },
-        {
-          id: "msg-2",
-          workflowId: "wf-5",
-          workflowName: "ETL Pipeline",
+          id: "msg-11",
+          executionId: "langflow-exec-13",
+          workflowId: "b51ce848-1d7f-4907-93cb-9fa375440a4c",
+          workflowName: "PDF Agent",
           engine: "langflow",
           direction: "incoming",
-          content: "Data processing complete. 245 records processed successfully.",
-          timestamp: "15.01.2024 14:20:08",
-          sender: "system@etl.internal",
-          executionId: "exec-2",
-          folderId: "data-processing",
+          sender: "classifier@internal",
+          content: "Incoming PDF document flagged for processing. Filename: invoice_2025_06.pdf",
+          timestamp: "13.06.2025 10:17:10",
+          folderId: "langflow",
+          metadata: {
+            fileName: "invoice_2025_06.pdf",
+            fileSizeKB: 328,
+            source: "email",
+          },
         },
+        {
+          id: "msg-12",
+          executionId: "langflow-exec-14",
+          workflowId: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36",
+          workflowName: "Classifier Agent",
+          engine: "langflow",
+          direction: "incoming",
+          sender: "webhook@external-service.com",
+          content: "Webhook received: Document type prediction requested for uploaded file ID #98215.",
+          timestamp: "13.06.2025 10:12:55",
+          folderId: "langflow",
+          metadata: {
+            triggerType: "webhook",
+            fileId: "98215",
+            requestOrigin: "external-service",
+          },
+        }
       ])
     } finally {
       setLoading(false)
@@ -162,7 +172,6 @@ export function MessagesDashboard({ selectedFolder }: MessagesDashboardProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Engines</SelectItem>
-            <SelectItem value="n8n">n8n</SelectItem>
             <SelectItem value="langflow">Langflow</SelectItem>
           </SelectContent>
         </Select>

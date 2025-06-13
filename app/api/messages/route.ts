@@ -3,239 +3,58 @@ import { NextResponse } from "next/server"
 // Mock data for when API connections fail
 const mockMessages = [
   {
-    id: "msg-1",
-    executionId: "n8n-exec-1",
-    workflowId: "wf-1",
-    workflowName: "Email Processor",
-    engine: "n8n",
-    direction: "outgoing",
-    recipient: "customer@example.com",
-    content: "Thank you for your inquiry. Your request has been received and will be processed shortly.",
-    timestamp: "15.01.2024 14:32:10",
-    folderId: "unassigned",
-    metadata: {
-      subject: "Request Confirmation",
-      template: "inquiry-confirmation",
-      attachments: 0,
-    },
-  },
-  {
-    id: "msg-2",
-    executionId: "n8n-exec-2",
-    workflowId: "wf-3",
-    workflowName: "Lead Scoring",
-    engine: "n8n",
-    direction: "outgoing",
-    recipient: "sales@company.com",
-    content: "New lead scored at 85/100. High priority follow-up recommended.",
-    timestamp: "15.01.2024 14:26:15",
-    folderId: "marketing",
-    metadata: {
-      leadScore: 85,
-      source: "website-form",
-      tags: ["high-priority", "b2b"],
-    },
-  },
-  {
-    id: "msg-3",
-    executionId: "langflow-exec-1",
-    workflowId: "wf-5",
-    workflowName: "ETL Pipeline",
+    id: "msg-8",
+    executionId: "langflow-exec-10",
+    workflowId: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36",
+    workflowName: "Classifier Agent",
     engine: "langflow",
     direction: "outgoing",
-    recipient: "data-warehouse",
-    content: "Daily data extraction complete. 1,245 records processed and loaded into the data warehouse.",
-    timestamp: "15.01.2024 14:25:33",
-    folderId: "data-processing",
+    recipient: "router@internal",
+    content: "Input classified as 'invoice-related'. Routing to PDF Agent for extraction.",
+    timestamp: "13.06.2025 10:16:01",
+    folderId: "langflow",
     metadata: {
-      recordsProcessed: 1245,
-      tables: ["customers", "orders", "products"],
-      duration: "5m 12s",
+      category: "invoice",
+      confidence: 0.94,
+      source: "email-attachment",
     },
   },
   {
-    id: "msg-4",
-    executionId: "n8n-exec-3",
-    workflowId: "wf-6",
-    workflowName: "Report Generator",
-    engine: "n8n",
-    direction: "incoming",
-    sender: "scheduler@internal",
-    content: "Scheduled report generation triggered. Generating monthly sales report.",
-    timestamp: "15.01.2024 14:35:10",
-    folderId: "data-processing",
-    metadata: {
-      reportType: "monthly-sales",
-      format: "pdf",
-      recipients: ["executive-team@company.com"],
-    },
-  },
-  {
-    id: "msg-5",
-    executionId: "langflow-exec-2",
-    workflowId: "wf-2",
-    workflowName: "Data Sync",
+    id: "msg-9",
+    executionId: "langflow-exec-11",
+    workflowId: "bcd1136b-b975-4697-8118-b5a9124c164f",
+    workflowName: "Email Agent",
     engine: "langflow",
     direction: "incoming",
-    sender: "api@external-service.com",
-    content: "Received 156 new customer records for synchronization.",
-    timestamp: "15.01.2024 14:16:33",
-    folderId: "unassigned",
+    sender: "inbox@company.com",
+    content: "New customer email received. Subject: 'Pricing inquiry for enterprise plan'.",
+    timestamp: "13.06.2025 10:14:43",
+    folderId: "langflow",
     metadata: {
-      source: "external-crm",
-      recordType: "customer",
-      count: 156,
+      subject: "Pricing inquiry for enterprise plan",
+      priority: "high",
+      threadId: "email-thread-9821",
     },
   },
   {
-    id: "msg-6",
-    executionId: "langflow-exec-3",
-    workflowId: "wf-4",
-    workflowName: "Campaign Tracker",
+    id: "msg-10",
+    executionId: "langflow-exec-12",
+    workflowId: "bdc81e87-c9d6-4430-8f5f-52e4ea5225a0",
+    workflowName: "JSON Agent",
     engine: "langflow",
     direction: "outgoing",
-    recipient: "marketing@company.com",
-    content: "Campaign performance alert: Click-through rate below threshold (1.2%). Review recommended.",
-    timestamp: "15.01.2024 14:11:15",
-    folderId: "marketing",
+    recipient: "storage@internal",
+    content: "Validated and stored 42 JSON records from API payload into the internal DB.",
+    timestamp: "13.06.2025 10:13:57",
+    folderId: "langflow",
     metadata: {
-      campaignId: "summer-promo-2023",
-      metrics: {
-        impressions: 45000,
-        clicks: 540,
-        ctr: 0.012,
-      },
-      threshold: 0.015,
+      recordsProcessed: 42,
+      source: "api-external-v2",
+      schemaVersion: "1.3.7",
     },
   },
-  {
-    id: "msg-7",
-    executionId: "n8n-exec-1",
-    workflowId: "wf-1",
-    workflowName: "Email Processor",
-    engine: "n8n",
-    direction: "incoming",
-    sender: "customer@example.com",
-    content: "I have a question about my recent order #12345. When can I expect it to be delivered?",
-    timestamp: "15.01.2024 14:30:45",
-    folderId: "unassigned",
-    metadata: {
-      category: "support",
-      priority: "medium",
-      orderReference: "12345",
-    },
-  },
-]
+];
 
-// Function to extract messages from n8n execution data
-function extractMessagesFromN8nExecution(execution: any): any[] {
-  const messages: any[] = []
-
-  try {
-    if (!execution || !execution.executionData || !execution.executionData.data) {
-      return []
-    }
-
-    const { resultData } = execution.executionData.data
-
-    if (!resultData || !resultData.runData) {
-      return []
-    }
-
-    // Look for email nodes
-    Object.entries(resultData.runData).forEach(([nodeName, nodeData]: [string, any]) => {
-      if (Array.isArray(nodeData) && nodeData.length > 0) {
-        nodeData.forEach((execution: any) => {
-          if (execution.data?.json) {
-            // Email node detection
-            if (nodeName.toLowerCase().includes("email") || nodeName.toLowerCase().includes("mail")) {
-              const data = execution.data.json
-
-              if (data.to || data.subject || data.html || data.text) {
-                messages.push({
-                  id: `msg-${execution.executionId}-${nodeName}-${Date.now()}`,
-                  executionId: execution.executionId || execution.id,
-                  workflowId: execution.workflowId,
-                  workflowName: execution.workflowName || "Unknown Workflow",
-                  engine: "n8n",
-                  direction: "outgoing",
-                  recipient: data.to || "unknown-recipient",
-                  content: data.text || data.html || "No content",
-                  timestamp: new Date().toLocaleString("de-DE"),
-                  folderId: execution.folderId || "unassigned",
-                  metadata: {
-                    subject: data.subject || "No subject",
-                    from: data.from || "system@flowbit.ai",
-                    cc: data.cc,
-                    bcc: data.bcc,
-                    attachments: data.attachments?.length || 0,
-                  },
-                })
-              }
-            }
-
-            // Slack message detection
-            if (nodeName.toLowerCase().includes("slack")) {
-              const data = execution.data.json
-
-              if (data.text || data.blocks) {
-                messages.push({
-                  id: `msg-${execution.executionId}-${nodeName}-${Date.now()}`,
-                  executionId: execution.executionId || execution.id,
-                  workflowId: execution.workflowId,
-                  workflowName: execution.workflowName || "Unknown Workflow",
-                  engine: "n8n",
-                  direction: "outgoing",
-                  recipient: data.channel || "unknown-channel",
-                  content: data.text || JSON.stringify(data.blocks) || "No content",
-                  timestamp: new Date().toLocaleString("de-DE"),
-                  folderId: execution.folderId || "unassigned",
-                  metadata: {
-                    channel: data.channel,
-                    username: data.username,
-                    blocks: data.blocks?.length || 0,
-                  },
-                })
-              }
-            }
-
-            // Generic message detection
-            if (execution.data.message || execution.data.content || execution.data.body) {
-              messages.push({
-                id: `msg-${execution.executionId}-${nodeName}-${Date.now()}`,
-                executionId: execution.executionId || execution.id,
-                workflowId: execution.workflowId,
-                workflowName: execution.workflowName || "Unknown Workflow",
-                engine: "n8n",
-                direction: execution.data.incoming ? "incoming" : "outgoing",
-                recipient: execution.data.recipient || execution.data.to || "unknown-recipient",
-                sender: execution.data.sender || execution.data.from,
-                content: execution.data.message || execution.data.content || execution.data.body || "No content",
-                timestamp: new Date().toLocaleString("de-DE"),
-                folderId: execution.folderId || "unassigned",
-                metadata: {
-                  ...execution.data,
-                  // Remove redundant fields from metadata
-                  message: undefined,
-                  content: undefined,
-                  body: undefined,
-                  recipient: undefined,
-                  to: undefined,
-                  sender: undefined,
-                  from: undefined,
-                },
-              })
-            }
-          }
-        })
-      }
-    })
-  } catch (error) {
-    console.error("Error extracting messages from n8n execution:", error)
-  }
-
-  return messages
-}
 
 // Function to extract messages from Langflow execution data
 function extractMessagesFromLangflowExecution(execution: any): any[] {
@@ -327,10 +146,7 @@ async function fetchMessagesFromExecutions() {
     let allMessages: any[] = []
 
     executions.forEach((execution: any) => {
-      if (execution.engine === "n8n") {
-        const messages = extractMessagesFromN8nExecution(execution)
-        allMessages = [...allMessages, ...messages]
-      } else if (execution.engine === "langflow") {
+      if (execution.engine === "langflow") {
         const messages = extractMessagesFromLangflowExecution(execution)
         allMessages = [...allMessages, ...messages]
       }

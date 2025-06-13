@@ -1,67 +1,6 @@
 import { NextResponse } from "next/server"
 
 // Mock data for when API connections fail
-const mockN8nExecutions = [
-  {
-    id: "n8n-exec-1",
-    workflowId: "wf-1",
-    workflowName: "Email Processor",
-    engine: "n8n",
-    status: "success",
-    duration: "2.3s",
-    startTime: "15.01.2024 14:30:22",
-    triggerType: "webhook",
-    folderId: "unassigned",
-    executionData: {
-      data: {
-        resultData: {
-          runData: {
-            Webhook: [{ data: { body: { email: "test@example.com" } }, executionTime: 120 }],
-            "Process Email": [{ data: { output: "Email processed" }, executionTime: 350 }],
-          },
-        },
-      },
-    },
-  },
-  {
-    id: "n8n-exec-2",
-    workflowId: "wf-3",
-    workflowName: "Lead Scoring",
-    engine: "n8n",
-    status: "error",
-    duration: "1.1s",
-    startTime: "15.01.2024 14:25:15",
-    triggerType: "webhook",
-    folderId: "marketing",
-    executionData: {
-      data: {
-        resultData: {
-          error: { message: "Failed to process lead data" },
-        },
-      },
-    },
-  },
-  {
-    id: "n8n-exec-3",
-    workflowId: "wf-6",
-    workflowName: "Report Generator",
-    engine: "n8n",
-    status: "running",
-    duration: "Running...",
-    startTime: "15.01.2024 14:35:10",
-    triggerType: "schedule",
-    folderId: "data-processing",
-    executionData: {
-      data: {
-        resultData: {
-          runData: {
-            "Data Fetch": [{ data: { records: 500 }, executionTime: 1200 }],
-          },
-        },
-      },
-    },
-  },
-]
 
 const mockLangflowExecutions = [
   {
@@ -80,40 +19,7 @@ const mockLangflowExecutions = [
         Transform: { status: "success", data: { transformations: ["join", "filter"] } },
       },
     },
-  },
-  {
-    id: "langflow-exec-2",
-    workflowId: "wf-2",
-    workflowName: "Data Sync",
-    engine: "langflow",
-    status: "success",
-    duration: "12.7s",
-    startTime: "15.01.2024 14:15:33",
-    triggerType: "manual",
-    folderId: "unassigned",
-    executionData: {
-      outputs: {
-        Sync: { status: "success", data: { synced: true } },
-      },
-    },
-  },
-  {
-    id: "langflow-exec-3",
-    workflowId: "wf-4",
-    workflowName: "Campaign Tracker",
-    engine: "langflow",
-    status: "error",
-    duration: "8.1s",
-    startTime: "15.01.2024 14:10:15",
-    triggerType: "webhook",
-    folderId: "marketing",
-    executionData: {
-      outputs: {
-        "Campaign Data": { status: "error", error: "API rate limit exceeded" },
-      },
-      error: "API rate limit exceeded",
-    },
-  },
+  }
 ]
 
 // Create a timeout promise
@@ -132,76 +38,6 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5
     return (await Promise.race([fetchPromise, timeoutPromise])) as Response
   } catch (error) {
     throw error
-  }
-}
-
-// n8n API integration with improved error handling
-async function fetchN8nExecutions() {
-  // Check if environment variables are set
-  const n8nBaseUrl = process.env.N8N_BASE_URL
-  const n8nApiKey = process.env.N8N_API_KEY
-
-  console.log("N8N Configuration:", {
-    baseUrl: n8nBaseUrl ? "Set" : "Not set",
-    apiKey: n8nApiKey ? "Set" : "Not set",
-  })
-
-  if (!n8nBaseUrl || !n8nApiKey) {
-    console.log("N8N environment variables not configured, using mock data")
-    return mockN8nExecutions
-  }
-
-  try {
-    const url = `${n8nBaseUrl}/rest/executions`
-    console.log(`Attempting to fetch n8n executions from: ${url}`)
-
-    const response = await fetchWithTimeout(
-      url,
-      {
-        headers: {
-          Authorization: `Bearer ${n8nApiKey}`,
-          "Content-Type": "application/json",
-        },
-      },
-      5000,
-    ) // 5 second timeout
-
-    console.log(`N8N API Response Status: ${response.status}`)
-
-    if (!response.ok) {
-      throw new Error(`n8n API error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    console.log(`N8N API returned ${data.data?.length || 0} executions`)
-
-    return data.data.map((execution: any) => ({
-      id: execution.id,
-      workflowId: execution.workflowId,
-      workflowName: execution.workflowData?.name || "Unknown Workflow",
-      engine: "n8n",
-      status: execution.finished ? (execution.stoppedAt ? "success" : "error") : "running",
-      duration: execution.finished
-        ? `${((new Date(execution.stoppedAt).getTime() - new Date(execution.startedAt).getTime()) / 1000).toFixed(1)}s`
-        : "Running...",
-      startTime: new Date(execution.startedAt)
-        .toLocaleDateString("de-DE", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-        .replace(",", ""),
-      triggerType: execution.mode || "manual",
-      folderId: execution.workflowData?.tags?.[0] || "unassigned",
-      executionData: execution,
-    }))
-  } catch (error) {
-    console.error("Error fetching n8n executions:", error)
-    console.log("Falling back to mock n8n execution data")
-    return mockN8nExecutions
   }
 }
 
@@ -229,7 +65,7 @@ async function fetchLangflowExecutions() {
       url,
       {
         headers: {
-          Authorization: `Bearer ${langflowApiKey}`,
+          "x-api-key": langflowApiKey,
           "Content-Type": "application/json",
         },
       },
@@ -278,16 +114,14 @@ export async function GET() {
     console.log("=== Fetching executions from all sources ===")
 
     // Use Promise.allSettled to handle cases where one API fails but the other succeeds
-    const [n8nResult, langflowResult] = await Promise.allSettled([fetchN8nExecutions(), fetchLangflowExecutions()])
+    const [langflowResult] = await Promise.allSettled([fetchLangflowExecutions()])
 
     // Extract results or use empty arrays for failed promises
-    const n8nExecutions = n8nResult.status === "fulfilled" ? n8nResult.value : mockN8nExecutions
     const langflowExecutions = langflowResult.status === "fulfilled" ? langflowResult.value : mockLangflowExecutions
 
     console.log(`Langflow executions: ${langflowExecutions.length}`)
-    console.log(`N8n executions: ${n8nExecutions.length}`)
 
-    const allExecutions = [...n8nExecutions, ...langflowExecutions]
+    const allExecutions = [...langflowExecutions]
       .sort((a, b) => {
         // Parse dates for proper comparison
         const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
@@ -300,10 +134,7 @@ export async function GET() {
 
     // Determine if we're using any mock data
     const usingMockData =
-      n8nResult.status === "rejected" ||
       langflowResult.status === "rejected" ||
-      !process.env.N8N_BASE_URL ||
-      !process.env.N8N_API_KEY ||
       !process.env.LANGFLOW_BASE_URL ||
       !process.env.LANGFLOW_API_KEY
 

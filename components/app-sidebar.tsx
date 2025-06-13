@@ -44,19 +44,6 @@ export function AppSidebar({ selectedFolder, onFolderSelect, onManageFolders, fo
 
   // Mock data for workflows in each folder - now including more LangFlow workflows
   const mockWorkflows: Record<string, WorkflowItem[]> = {
-    unassigned: [
-      { id: "wf-1", name: "Email Processor", engine: "n8n" },
-      { id: "wf-2", name: "Data Sync", engine: "langflow" },
-    ],
-    marketing: [
-      { id: "wf-3", name: "Lead Scoring", engine: "n8n" },
-      { id: "wf-4", name: "Campaign Tracker", engine: "n8n" },
-      { id: "wf-7", name: "Customer Segmentation", engine: "langflow" },
-    ],
-    "data-processing": [
-      { id: "wf-5", name: "ETL Pipeline", engine: "langflow" },
-      { id: "wf-6", name: "Report Generator", engine: "n8n" },
-    ],
     langflow: [
       { id: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36", name: "Classifier Agent", engine: "langflow" },
       { id: "bcd1136b-b975-4697-8118-b5a9124c164f", name: "Email Agent", engine: "langflow" },
@@ -190,24 +177,6 @@ export function AppSidebar({ selectedFolder, onFolderSelect, onManageFolders, fo
                 >
                   <Clock className="w-4 h-4" />
                   <span>Recent Runs</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onNavigate && onNavigate("/langflow/templates")}
-                  className="w-full justify-start"
-                >
-                  <Workflow className="w-4 h-4" />
-                  <span>Templates</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => onNavigate && onNavigate("/langflow/workflows")}
-                  className="w-full justify-start"
-                >
-                  <Workflow className="w-4 h-4" />
-                  <span>Workflows</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

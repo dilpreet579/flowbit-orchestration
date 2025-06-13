@@ -38,76 +38,11 @@ export interface Workflow {
 
 // Initial folders data
 const initialFolders: Folder[] = [
-  { id: "unassigned", name: "Unassigned", workflowCount: 2, isDefault: true },
-  { id: "marketing", name: "Marketing Automation", workflowCount: 3, isDefault: false },
-  { id: "data-processing", name: "Data Processing", workflowCount: 2, isDefault: false },
+  { id: "langflow", name: "LangFlow", workflowCount: 4, isDefault: true },
 ]
 
 // Initial workflows data - now including more LangFlow workflows
 const initialWorkflows: Workflow[] = [
-  {
-    id: "wf-1",
-    name: "Email Processor",
-    description: "Processes incoming emails and extracts data",
-    engine: "n8n",
-    folderId: "unassigned",
-    lastRun: "15.01.2024 14:30:22",
-    status: "success",
-  },
-  {
-    id: "wf-2",
-    name: "Data Sync",
-    description: "Synchronizes data between systems",
-    engine: "langflow",
-    folderId: "unassigned",
-    lastRun: "14.01.2024 09:15:10",
-    status: "success",
-  },
-  {
-    id: "wf-3",
-    name: "Lead Scoring",
-    description: "Scores leads based on behavior and attributes",
-    engine: "n8n",
-    folderId: "marketing",
-    lastRun: "13.01.2024 16:45:33",
-    status: "error",
-  },
-  {
-    id: "wf-4",
-    name: "Campaign Tracker",
-    description: "Tracks marketing campaign performance",
-    engine: "n8n",
-    folderId: "marketing",
-    lastRun: "12.01.2024 11:20:45",
-    status: "success",
-  },
-  {
-    id: "wf-5",
-    name: "ETL Pipeline",
-    description: "Extracts, transforms, and loads data",
-    engine: "langflow",
-    folderId: "data-processing",
-    lastRun: "15.01.2024 14:20:08",
-    status: "success",
-  },
-  {
-    id: "wf-6",
-    name: "Report Generator",
-    description: "Generates automated reports",
-    engine: "n8n",
-    folderId: "data-processing",
-    lastRun: "11.01.2024 08:30:15",
-    status: "success",
-  },
-  {
-    id: "wf-7",
-    name: "Customer Segmentation",
-    description: "Segments customers using AI",
-    engine: "langflow",
-    folderId: "marketing",
-    lastRun: "10.01.2024 13:45:22",
-    status: "success",
-  },
   {
     id: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36",
     name: "Classifier Agent",
@@ -166,19 +101,9 @@ export function OrchestrationDashboard() {
     setSelectedWorkflow({ id: workflowId, name: workflowName, engine })
     setTriggerModalOpen(true)
   }
-  
-  console.log("Folders", folders);
+
   // Get all folders including the LangFlow folder
-  const allFolders = [
-    ...folders,
-    {
-      id: "langflow",
-      name: "LangFlow",
-      workflowCount: workflows.filter((w) => w.folderId === "langflow").length,
-      isDefault: false,
-    },
-  ]
-  console.log("All Folders", allFolders);
+  const allFolders = [...folders]
 
   return (
     <SidebarProvider defaultOpen={true}>
