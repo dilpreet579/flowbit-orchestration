@@ -124,7 +124,7 @@ function createTimeoutPromise(ms: number) {
 }
 
 // Fetch with timeout
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 5000) {
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 50000) {
   try {
     const fetchPromise = fetch(url, options)
     const timeoutPromise = createTimeoutPromise(timeoutMs)
@@ -278,16 +278,14 @@ export async function GET() {
     console.log("=== Fetching executions from all sources ===")
 
     // Use Promise.allSettled to handle cases where one API fails but the other succeeds
-    const [n8nResult, langflowResult] = await Promise.allSettled([fetchN8nExecutions(), fetchLangflowExecutions()])
+    const [langflowResult] = await Promise.allSettled([fetchLangflowExecutions()])
 
     // Extract results or use empty arrays for failed promises
-    const n8nExecutions = n8nResult.status === "fulfilled" ? n8nResult.value : mockN8nExecutions
     const langflowExecutions = langflowResult.status === "fulfilled" ? langflowResult.value : mockLangflowExecutions
 
-    console.log(`N8N executions: ${n8nExecutions.length}`)
     console.log(`Langflow executions: ${langflowExecutions.length}`)
 
-    const allExecutions = [...n8nExecutions, ...langflowExecutions]
+    const allExecutions = [...langflowExecutions]
       .sort((a, b) => {
         // Parse dates for proper comparison
         const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
@@ -300,10 +298,7 @@ export async function GET() {
 
     // Determine if we're using any mock data
     const usingMockData =
-      n8nResult.status === "rejected" ||
       langflowResult.status === "rejected" ||
-      !process.env.N8N_BASE_URL ||
-      !process.env.N8N_API_KEY ||
       !process.env.LANGFLOW_BASE_URL ||
       !process.env.LANGFLOW_API_KEY
 
@@ -316,7 +311,7 @@ export async function GET() {
     console.error("Unexpected error in executions API route:", error)
 
     // Return mock data as ultimate fallback
-    const mockExecutions = [...mockN8nExecutions, ...mockLangflowExecutions].sort((a, b) => {
+    const mockExecutions = [...mockLangflowExecutions].sort((a, b) => {
       const dateA = a.startTime.split(" ")[0].split(".").reverse().join("-") + " " + a.startTime.split(" ")[1]
       const dateB = b.startTime.split(" ")[0].split(".").reverse().join("-") + " " + b.startTime.split(" ")[1]
       return new Date(dateB).getTime() - new Date(dateA).getTime()
