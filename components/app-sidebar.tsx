@@ -58,9 +58,10 @@ export function AppSidebar({ selectedFolder, onFolderSelect, onManageFolders, fo
       { id: "wf-6", name: "Report Generator", engine: "n8n" },
     ],
     langflow: [
-      { id: "wf-8", name: "Text Summarization", engine: "langflow" },
-      { id: "wf-9", name: "Sentiment Analysis", engine: "langflow" },
-      { id: "wf-10", name: "Document QA", engine: "langflow" },
+      { id: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36", name: "Classifier Agent", engine: "langflow" },
+      { id: "bcd1136b-b975-4697-8118-b5a9124c164f", name: "Email Agent", engine: "langflow" },
+      { id: "bdc81e87-c9d6-4430-8f5f-52e4ea5225a0", name: "JSON Agent", engine: "langflow" },
+      { id: "b51ce848-1d7f-4907-93cb-9fa375440a4c", name: "PDF Agent", engine: "langflow" },
     ],
   }
 

@@ -7,7 +7,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "File",
-            "id": "File-xgNsA",
+            "id": "File-xO52G",
             "name": "dataframe",
             "output_types": [
               "DataFrame"
@@ -15,7 +15,7 @@
           },
           "targetHandle": {
             "fieldName": "input_data",
-            "id": "ParserComponent-yAwXO",
+            "id": "ParserComponent-i33wc",
             "inputTypes": [
               "DataFrame",
               "Data"
@@ -23,12 +23,12 @@
             "type": "other"
           }
         },
-        "id": "xy-edge__File-xgNsA{œdataTypeœ:œFileœ,œidœ:œFile-xgNsAœ,œnameœ:œdataframeœ,œoutput_typesœ:[œDataFrameœ]}-ParserComponent-yAwXO{œfieldNameœ:œinput_dataœ,œidœ:œParserComponent-yAwXOœ,œinputTypesœ:[œDataFrameœ,œDataœ],œtypeœ:œotherœ}",
+        "id": "reactflow__edge-File-xO52G{œdataTypeœ:œFileœ,œidœ:œFile-xO52Gœ,œnameœ:œdataframeœ,œoutput_typesœ:[œDataFrameœ]}-ParserComponent-i33wc{œfieldNameœ:œinput_dataœ,œidœ:œParserComponent-i33wcœ,œinputTypesœ:[œDataFrameœ,œDataœ],œtypeœ:œotherœ}",
         "selected": false,
-        "source": "File-xgNsA",
-        "sourceHandle": "{œdataTypeœ:œFileœ,œidœ:œFile-xgNsAœ,œnameœ:œdataframeœ,œoutput_typesœ:[œDataFrameœ]}",
-        "target": "ParserComponent-yAwXO",
-        "targetHandle": "{œfieldNameœ:œinput_dataœ,œidœ:œParserComponent-yAwXOœ,œinputTypesœ:[œDataFrameœ,œDataœ],œtypeœ:œotherœ}"
+        "source": "File-xO52G",
+        "sourceHandle": "{œdataTypeœ:œFileœ,œidœ:œFile-xO52Gœ,œnameœ:œdataframeœ,œoutput_typesœ:[œDataFrameœ]}",
+        "target": "ParserComponent-i33wc",
+        "targetHandle": "{œfieldNameœ:œinput_dataœ,œidœ:œParserComponent-i33wcœ,œinputTypesœ:[œDataFrameœ,œDataœ],œtypeœ:œotherœ}"
       },
       {
         "animated": false,
@@ -36,7 +36,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "ParserComponent",
-            "id": "ParserComponent-yAwXO",
+            "id": "ParserComponent-i33wc",
             "name": "parsed_text",
             "output_types": [
               "Message"
@@ -44,19 +44,19 @@
           },
           "targetHandle": {
             "fieldName": "Document",
-            "id": "Prompt-LjjIR",
+            "id": "Prompt-ZBk9Q",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__ParserComponent-yAwXO{œdataTypeœ:œParserComponentœ,œidœ:œParserComponent-yAwXOœ,œnameœ:œparsed_textœ,œoutput_typesœ:[œMessageœ]}-Prompt-LjjIR{œfieldNameœ:œDocumentœ,œidœ:œPrompt-LjjIRœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-ParserComponent-i33wc{œdataTypeœ:œParserComponentœ,œidœ:œParserComponent-i33wcœ,œnameœ:œparsed_textœ,œoutput_typesœ:[œMessageœ]}-Prompt-ZBk9Q{œfieldNameœ:œDocumentœ,œidœ:œPrompt-ZBk9Qœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "ParserComponent-yAwXO",
-        "sourceHandle": "{œdataTypeœ:œParserComponentœ,œidœ:œParserComponent-yAwXOœ,œnameœ:œparsed_textœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "Prompt-LjjIR",
-        "targetHandle": "{œfieldNameœ:œDocumentœ,œidœ:œPrompt-LjjIRœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "ParserComponent-i33wc",
+        "sourceHandle": "{œdataTypeœ:œParserComponentœ,œidœ:œParserComponent-i33wcœ,œnameœ:œparsed_textœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "Prompt-ZBk9Q",
+        "targetHandle": "{œfieldNameœ:œDocumentœ,œidœ:œPrompt-ZBk9Qœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -64,7 +64,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "Prompt",
-            "id": "Prompt-LjjIR",
+            "id": "Prompt-ZBk9Q",
             "name": "prompt",
             "output_types": [
               "Message"
@@ -72,19 +72,19 @@
           },
           "targetHandle": {
             "fieldName": "input_value",
-            "id": "OpenAIModel-AOzWD",
+            "id": "OpenAIModel-1iQV9",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__Prompt-LjjIR{œdataTypeœ:œPromptœ,œidœ:œPrompt-LjjIRœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-OpenAIModel-AOzWD{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-AOzWDœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-Prompt-ZBk9Q{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZBk9Qœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-OpenAIModel-1iQV9{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-1iQV9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "Prompt-LjjIR",
-        "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-LjjIRœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "OpenAIModel-AOzWD",
-        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-AOzWDœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "Prompt-ZBk9Q",
+        "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZBk9Qœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "OpenAIModel-1iQV9",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-1iQV9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       },
       {
         "animated": false,
@@ -92,7 +92,7 @@
         "data": {
           "sourceHandle": {
             "dataType": "OpenAIModel",
-            "id": "OpenAIModel-AOzWD",
+            "id": "OpenAIModel-1iQV9",
             "name": "text_output",
             "output_types": [
               "Message"
@@ -100,25 +100,25 @@
           },
           "targetHandle": {
             "fieldName": "input_value",
-            "id": "TextOutput-LPhu9",
+            "id": "TextOutput-JVSNq",
             "inputTypes": [
               "Message"
             ],
             "type": "str"
           }
         },
-        "id": "xy-edge__OpenAIModel-AOzWD{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-AOzWDœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-TextOutput-LPhu9{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-LPhu9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-OpenAIModel-1iQV9{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-1iQV9œ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-TextOutput-JVSNq{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-JVSNqœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
         "selected": false,
-        "source": "OpenAIModel-AOzWD",
-        "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-AOzWDœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
-        "target": "TextOutput-LPhu9",
-        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-LPhu9œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        "source": "OpenAIModel-1iQV9",
+        "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-1iQV9œ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "TextOutput-JVSNq",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-JVSNqœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
       }
     ],
     "nodes": [
       {
         "data": {
-          "id": "File-xgNsA",
+          "id": "File-xO52G",
           "node": {
             "base_classes": [
               "Data",
@@ -345,7 +345,7 @@
                   "gz"
                 ],
                 "file_path": [
-                  "e991c786-b931-4032-b928-f7822a7663a0/3edd619d-1656-4bc8-bdf1-9abc93dffbd7.txt"
+                  "0744ca7a-5fdd-44b8-b590-aa1bf98e5f83/09ef6190-445d-4a2f-b0f8-bca0a0373c12.txt"
                 ],
                 "info": "Supported file extensions: txt, md, mdx, csv, json, yaml, yml, xml, html, htm, pdf, docx, py, sh, sql, js, ts, tsx; optionally bundled in file extensions: zip, tar, tgz, bz2, gz",
                 "list": true,
@@ -423,7 +423,7 @@
           "type": "File"
         },
         "dragging": false,
-        "id": "File-xgNsA",
+        "id": "File-xO52G",
         "measured": {
           "height": 361,
           "width": 320
@@ -437,7 +437,7 @@
       },
       {
         "data": {
-          "id": "ParserComponent-yAwXO",
+          "id": "ParserComponent-i33wc",
           "node": {
             "base_classes": [
               "Message"
@@ -599,7 +599,7 @@
           "type": "ParserComponent"
         },
         "dragging": false,
-        "id": "ParserComponent-yAwXO",
+        "id": "ParserComponent-i33wc",
         "measured": {
           "height": 398,
           "width": 320
@@ -613,7 +613,7 @@
       },
       {
         "data": {
-          "id": "Prompt-LjjIR",
+          "id": "Prompt-ZBk9Q",
           "node": {
             "base_classes": [
               "Message"
@@ -724,7 +724,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "type": "prompt",
-                "value": "You are an email parsing assistant. Extract the following fields from the email content: sender, subject, body, urgency (high or routine), issue (short summary of the main issue), the tone of the email(polite, angry, threatening, escalation, or neutral), and the suggested action(ESCALATE = 'escalate' , FLAG_RISK = 'flag_risk' , LOG_ALERT = 'log_alert' , LOG_AND_CLOSE = 'log_and_close')\n\nThe email content is: {Document}\n\nReturn the output as a single text(avoid the ```json ... ``` thing) in JSON format."
+                "value": "You are an email parsing assistant. Extract the following fields from the email content: sender, subject, body, urgency (high or routine), issue (short summary of the main issue), the tone of the email(polite, angry, threatening, escalation, or neutral), and the suggested action(ESCALATE = 'escalate' , FLAG_RISK = 'flag_risk' , LOG_ALERT = 'log_alert' , LOG_AND_CLOSE = 'log_and_close')\n\nThe email content is: {Document}\n\nReturn the output in JSON format."
               },
               "tool_placeholder": {
                 "_input_type": "MessageTextInput",
@@ -756,7 +756,7 @@
           "type": "Prompt"
         },
         "dragging": false,
-        "id": "Prompt-LjjIR",
+        "id": "Prompt-ZBk9Q",
         "measured": {
           "height": 415,
           "width": 320
@@ -770,7 +770,7 @@
       },
       {
         "data": {
-          "id": "OpenAIModel-AOzWD",
+          "id": "OpenAIModel-1iQV9",
           "node": {
             "base_classes": [
               "LanguageModel",
@@ -1148,7 +1148,7 @@
           "type": "OpenAIModel"
         },
         "dragging": false,
-        "id": "OpenAIModel-AOzWD",
+        "id": "OpenAIModel-1iQV9",
         "measured": {
           "height": 620,
           "width": 320
@@ -1162,7 +1162,7 @@
       },
       {
         "data": {
-          "id": "TextOutput-LPhu9",
+          "id": "TextOutput-JVSNq",
           "node": {
             "base_classes": [
               "Message"
@@ -1255,7 +1255,7 @@
           "type": "TextOutput"
         },
         "dragging": false,
-        "id": "TextOutput-LPhu9",
+        "id": "TextOutput-JVSNq",
         "measured": {
           "height": 231,
           "width": 320
@@ -1269,14 +1269,14 @@
       }
     ],
     "viewport": {
-      "x": -1982.1431387878324,
-      "y": -848.9487244473951,
-      "zoom": 1.2457744731243923
+      "x": -704.3205312673595,
+      "y": -260.460387719819,
+      "zoom": 0.7407419316514219
     }
   },
   "description": "the email agent\n",
   "endpoint_name": null,
-  "id": "690b2b52-5a98-4cef-88f2-6ebfe5b6c320",
+  "id": "bcd1136b-b975-4697-8118-b5a9124c164f",
   "is_component": false,
   "last_tested_version": "1.4.2",
   "name": "Email Agent",
