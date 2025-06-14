@@ -46,7 +46,7 @@ const initialWorkflows: Workflow[] = [
   {
     id: "6491cae3-136c-4af1-b00c-ba5b9b7ebe36",
     name: "Classifier Agent",
-    description: "the classifier agent",
+    description: "The Classifier Agent determines both the format (Email, JSON, PDF) and the business intent (such as Complaint, Invoice, RFQ, etc.) using NLP and heuristics.",
     engine: "langflow",
     folderId: "langflow",
     lastRun: "13.06.2025 10:15:30",
@@ -55,7 +55,7 @@ const initialWorkflows: Workflow[] = [
   {
     id: "bcd1136b-b975-4697-8118-b5a9124c164f",
     name: "Email Agent",
-    description: "the email agent",
+    description: "The Email Agent parses and extracts fields from emails.",
     engine: "langflow",
     folderId: "langflow",
     lastRun: "13.06.2025 10:15:30",
@@ -64,7 +64,7 @@ const initialWorkflows: Workflow[] = [
   {
     id: "bdc81e87-c9d6-4430-8f5f-52e4ea5225a0",
     name: "JSON Agent",
-    description: "the json agent",
+    description: "The JSON Agent validates and extracts data from JSON.",
     engine: "langflow",
     folderId: "langflow",
     lastRun: "13.06.2025 10:15:30",
@@ -73,7 +73,7 @@ const initialWorkflows: Workflow[] = [
   {
     id: "b51ce848-1d7f-4907-93cb-9fa375440a4c",
     name: "PDF Agent",
-    description: "the pdf agent",
+    description: "The PDF Agent extracts and parses text from PDF files.",
     engine: "langflow",
     folderId: "langflow",
     lastRun: "13.06.2025 10:15:30",
@@ -247,7 +247,7 @@ export function OrchestrationDashboard() {
         onOpenChange={setTriggerModalOpen}
         workflowId={selectedWorkflow?.id || null}
         workflowName={selectedWorkflow?.name || null}
-        engine={selectedWorkflow?.engine || null}
+        engine={selectedWorkflow?.engine as "langflow" | null}
       />
     </SidebarProvider>
   )
