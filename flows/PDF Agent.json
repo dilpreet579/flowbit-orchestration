@@ -1273,7 +1273,7 @@
       "zoom": 0.6228872365621961
     }
   },
-  "description": "the pdf agent",
+  "description": "The PDF Agent extracts and parses text from PDF files.",
   "endpoint_name": null,
   "id": "b51ce848-1d7f-4907-93cb-9fa375440a4c",
   "is_component": false,

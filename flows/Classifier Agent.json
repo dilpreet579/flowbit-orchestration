@@ -1274,7 +1274,7 @@
       "zoom": 0.7768011576576148
     }
   },
-  "description": "the classifier agent",
+  "description": "The Classifier Agent determines both the format (Email, JSON, PDF) and the business intent (such as Complaint, Invoice, RFQ, etc.) using NLP and heuristics.",
   "endpoint_name": null,
   "id": "6491cae3-136c-4af1-b00c-ba5b9b7ebe36",
   "is_component": false,

@@ -1274,7 +1274,7 @@
       "zoom": 0.6228872365621961
     }
   },
-  "description": "the json agent",
+  "description": "The JSON Agent validates and extracts data from JSON.",
   "endpoint_name": null,
   "id": "bdc81e87-c9d6-4430-8f5f-52e4ea5225a0",
   "is_component": false,

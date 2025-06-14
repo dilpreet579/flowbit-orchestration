@@ -1274,7 +1274,7 @@
       "zoom": 0.7407419316514219
     }
   },
-  "description": "the email agent\n",
+  "description": "The Email Agent parses and extracts fields from emails.",
   "endpoint_name": null,
   "id": "bcd1136b-b975-4697-8118-b5a9124c164f",
   "is_component": false,
