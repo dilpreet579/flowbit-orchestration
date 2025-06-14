@@ -346,6 +346,11 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
     setCurrentPage(1)
   }
 
+  const handleRetryDetails = async () => {
+    if (!selectedExecution) return
+    await fetchRunDetails()
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -569,9 +574,7 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
       <ExecutionDetailsModal
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
-        executionId={selectedExecution}
         runDetails={runDetails}
-        fetchRunDetails={fetchRunDetails}
         loading={loadingRunDetails}
         error={runDetailsError}
         streamData={streamData}
@@ -579,6 +582,8 @@ export function ExecutionsDashboard({ selectedFolder }: ExecutionsDashboardProps
         startStreaming={startStreaming}
         pauseStreaming={pauseStreaming}
         streamPaused={streamPaused}
+        onRetry={handleRetryDetails}
+        isLoading={loadingRunDetails}
       />
 
       <TriggerWorkflowModal

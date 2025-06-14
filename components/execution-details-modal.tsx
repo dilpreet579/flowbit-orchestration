@@ -24,34 +24,60 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { MessagesView } from "@/components/messages-view"
 import { cn } from "@/lib/utils"
 
+interface RunDetails {
+  id: string
+  flow_id: string
+  flow_name: string
+  status: string
+  duration: number | null
+  timestamp: string
+  trigger_type: string
+  tags: string[] | null
+  error?: string
+  inputs?: Record<string, any>
+  outputs?: Record<string, any>
+  logs?: Array<{
+    level: string
+    message: string
+    timestamp: string
+  }>
+}
+
+interface StreamData {
+  type: string
+  status?: string
+  data?: any
+  timestamp: string
+}
+
 interface ExecutionDetailsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  executionId: string | null
-  runDetails: any
-  fetchRunDetails: () => void
+  runDetails: RunDetails | null
   loading: boolean
   error: string | null
-  streamData: any[]
+  streamData: StreamData[]
   isStreaming: boolean
   startStreaming: () => void
   pauseStreaming: () => void
   streamPaused: boolean
+  onRetry: () => void
+  isLoading: boolean
 }
 
 export function ExecutionDetailsModal({
   open,
   onOpenChange,
-  executionId,
   runDetails,
-  fetchRunDetails,
-  loading = false,
-  error = null,
-  streamData = [],
-  isStreaming = false,
-  startStreaming = () => {},
-  pauseStreaming = () => {},
-  streamPaused = false,
+  loading,
+  error,
+  streamData,
+  isStreaming,
+  startStreaming,
+  pauseStreaming,
+  streamPaused,
+  onRetry,
+  isLoading,
 }: ExecutionDetailsModalProps) {
   const [expandedNodes, setExpandedNodes] = useState<string[]>([])
 
@@ -65,15 +91,16 @@ export function ExecutionDetailsModal({
     navigator.clipboard.writeText(text)
   }
 
-  const formatDuration = (seconds: number) => {
-    if (!seconds) return "N/A"
+  const formatDuration = (duration: number | null): string => {
+    if (duration === null) return "N/A"
+    const totalSeconds = duration / 1000
 
-    if (seconds < 60) {
-      return `${seconds.toFixed(1)}s`
+    if (totalSeconds < 60) {
+      return `${totalSeconds.toFixed(1)}s`
     } else {
-      const minutes = Math.floor(seconds / 60)
-      const remainingSeconds = seconds % 60
-      return `${minutes}m ${remainingSeconds.toFixed(0)}s`
+      const totalMinutes = Math.floor(totalSeconds / 60)
+      const remainingSeconds = totalSeconds % 60
+      return `${totalMinutes}m ${remainingSeconds.toFixed(0)}s`
     }
   }
 
@@ -134,9 +161,12 @@ export function ExecutionDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogTitle>Loading...</DialogTitle>
+          <DialogTitle>Execution Details</DialogTitle>
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7575e4]"></div>
+            <div className="text-center">
+              <RefreshCw className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+              <p className="text-gray-600">Loading execution details...</p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -147,10 +177,28 @@ export function ExecutionDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogTitle>Execution Details</DialogTitle>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <p className="text-gray-600">{error}</p>
+              <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button 
+                onClick={onRetry} 
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Try Again
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -162,11 +210,28 @@ export function ExecutionDetailsModal({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogTitle>No run details available</DialogTitle>
+          <DialogTitle>Execution Details</DialogTitle>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <Info className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <p className="text-gray-600">No run details available</p>
+              <p className="text-gray-600 mb-4">No run details available</p>
+              <Button 
+                onClick={onRetry} 
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Try Again
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -228,7 +293,7 @@ export function ExecutionDetailsModal({
                 )}
               </>
             )}
-            <Button variant="outline" onClick={fetchRunDetails} className="gap-2">
+            <Button variant="outline" onClick={onRetry} className="gap-2">
               <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
               Refresh
             </Button>
