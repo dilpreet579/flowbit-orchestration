@@ -22,6 +22,34 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 7
   }
 }
 
+// Add this new function after the imports
+async function storeTriggerMessage(workflowName: string, triggerType: string, executionId: string) {
+  try {
+    // Store a simple trigger message
+    const message = {
+      id: `trigger-${executionId}`,
+      executionId: executionId,
+      workflowName: workflowName,
+      engine: "system",
+      direction: "outgoing",
+      content: `${workflowName} was triggered. Trigger type: ${triggerType}.`,
+      timestamp: new Date().toLocaleString("de-DE"),
+      triggerType: triggerType || "manual",
+      metadata: {
+        type: "trigger",
+        executionId: executionId,
+      },
+    }
+
+    // For now, we'll store this as part of the execution data
+    // In a real implementation, you might want a separate messages table
+    console.log("Trigger message stored:", message)
+    return message
+  } catch (error) {
+    console.error("Error storing trigger message:", error)
+  }
+}
+
 async function triggerLangflowWorkflow(flowId: string, payload?: any, triggerType?: string) {
   // Check if environment variables are set
   const langflowBaseUrl = process.env.LANGFLOW_BASE_URL
@@ -80,6 +108,9 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any, triggerTyp
         },
       ],
     })
+
+    // In the triggerLangflowWorkflow function, after storeExecution call, add:
+    await storeTriggerMessage(flowName, triggerType || "errorParsingTriggerType", executionId)
 
     // Now trigger the flow
     const triggerUrl = `${langflowBaseUrl}/api/v1/run/${flowId}`
