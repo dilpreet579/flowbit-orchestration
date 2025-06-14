@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { storeExecution, updateExecution } from "@/lib/db"
 
 // Create a timeout promise
 function createTimeoutPromise(ms: number) {
@@ -26,12 +27,7 @@ async function forwardToLangflow(workflowId: string, payload: any) {
   const langflowApiKey = process.env.LANGFLOW_API_KEY
 
   if (!langflowBaseUrl || !langflowApiKey) {
-    console.log("Langflow environment variables not configured, using mock response")
-    return {
-      success: true,
-      run_id: `mock-run-${Date.now()}`,
-      message: "Flow triggered successfully (mock)",
-    }
+    throw new Error("Langflow environment variables not configured")
   }
 
   try {
@@ -89,6 +85,9 @@ export async function GET(request: Request, { params }: { params: { workflowId: 
 
 // Handle POST requests (actual webhook triggers)
 export async function POST(request: Request, { params }: { params: { workflowId: string } }) {
+  const startTime = Date.now()
+  let executionId: string | null = null
+
   try {
     const workflowId = params.workflowId
 
@@ -103,21 +102,77 @@ export async function POST(request: Request, { params }: { params: { workflowId:
 
     console.log(`Webhook received for workflow ${workflowId}`)
 
+    // Create initial execution record
+    executionId = await storeExecution({
+      flow_id: workflowId,
+      flow_name: `Webhook Triggered Flow ${workflowId}`,
+      status: "RUNNING",
+      trigger_type: "webhook",
+      inputs: payload,
+      logs: [
+        {
+          level: "info",
+          message: "Webhook received and processing started",
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    })
+
     // Forward the request to LangFlow
     const result = await forwardToLangflow(workflowId, payload)
+
+    // Calculate duration
+    const duration = Date.now() - startTime
+
+    // Update execution with success status
+    await updateExecution(executionId, {
+      status: "COMPLETED",
+      duration,
+      outputs: result,
+      logs: [
+        {
+          level: "info",
+          message: "Webhook processing completed successfully",
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    })
 
     return NextResponse.json({
       success: true,
       message: "Webhook processed successfully",
+      execution_id: executionId,
       run_id: result.run_id,
       result,
     })
   } catch (error) {
     console.error("Error processing webhook:", error)
+    
+    // If we have an execution ID, update it with error status
+    if (executionId) {
+      try {
+        await updateExecution(executionId, {
+          status: "ERROR",
+          duration: Date.now() - startTime,
+          error: (error as Error).message,
+          logs: [
+            {
+              level: "error",
+              message: `Webhook processing failed: ${(error as Error).message}`,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        })
+      } catch (updateError) {
+        console.error("Error updating execution status:", updateError)
+      }
+    }
+
     return NextResponse.json(
       {
         success: false,
         error: (error as Error).message,
+        execution_id: executionId,
       },
       { status: 500 },
     )
