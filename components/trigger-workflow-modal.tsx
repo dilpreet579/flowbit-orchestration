@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -12,12 +12,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Copy, AlertCircle, Check, Play, Clock, Webhook } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+// Add type for supported engines
+type SupportedEngine = "langflow"
+
 interface TriggerWorkflowModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   workflowId: string | null
   workflowName: string | null
-  engine: string | null
+  engine: SupportedEngine | null
 }
 
 export function TriggerWorkflowModal({
@@ -37,9 +40,22 @@ export function TriggerWorkflowModal({
   const { toast } = useToast()
 
   // Generate webhook URL based on workflow ID and engine
-  const webhookUrl = workflowId
-    ? `${window.location.origin}/api/webhook/${engine}/${workflowId}`
-    : "https://example.com/api/webhook/undefined/undefined"
+  const webhookUrl = useCallback(() => {
+    if (!workflowId || !engine) {
+      return null
+    }
+
+    // Get the base URL from environment or fallback to window.location
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                   (typeof window !== 'undefined' ? window.location.origin : '')
+
+    if (!baseUrl) {
+      console.error('No base URL available for webhook')
+      return null
+    }
+
+    return `${baseUrl}/api/webhook/${engine}/${workflowId}`
+  }, [workflowId, engine])
 
   const validateJson = (json: string): boolean => {
     try {
@@ -71,9 +87,24 @@ export function TriggerWorkflowModal({
   }
 
   const handleCopyWebhook = () => {
-    navigator.clipboard.writeText(webhookUrl)
+    const url = webhookUrl()
+    if (!url) {
+      toast({
+        title: "Error",
+        description: "Webhook URL is not available",
+        variant: "destructive",
+      })
+      return
+    }
+
+    navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+    
+    toast({
+      title: "Copied",
+      description: "Webhook URL copied to clipboard",
+    })
   }
 
   const handleTriggerWorkflow = async () => {
@@ -172,7 +203,7 @@ export function TriggerWorkflowModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Play className="h-5 w-5" />
@@ -220,8 +251,20 @@ export function TriggerWorkflowModal({
             <div className="space-y-2">
               <Label htmlFor="webhook-url">Webhook URL</Label>
               <div className="flex">
-                <Input id="webhook-url" value={webhookUrl} readOnly className="font-mono flex-1 bg-muted" />
-                <Button type="button" variant="outline" size="icon" className="ml-2" onClick={handleCopyWebhook}>
+                <Input 
+                  id="webhook-url" 
+                  value={webhookUrl() || 'Webhook URL not available'} 
+                  readOnly 
+                  className="font-mono flex-1 bg-muted" 
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  className="ml-2" 
+                  onClick={handleCopyWebhook}
+                  disabled={!webhookUrl()}
+                >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
@@ -230,16 +273,18 @@ export function TriggerWorkflowModal({
               </p>
             </div>
 
-            <Alert>
-              <AlertDescription>
-                <p className="font-medium">Example cURL command:</p>
-                <pre className="mt-2 p-2 bg-muted rounded-md text-xs overflow-x-auto">
-                  {`curl -X POST ${webhookUrl} \\
+            {webhookUrl() && (
+              <Alert>
+                <AlertDescription>
+                  <p className="font-medium">Example cURL command:</p>
+                  <pre className="mt-2 p-2 bg-muted rounded-md text-xs overflow-x-auto">
+                    {`curl -X POST ${webhookUrl()} \\
   -H "Content-Type: application/json" \\
   -d '{"data": {"input": "value"}}'`}
-                </pre>
-              </AlertDescription>
-            </Alert>
+                  </pre>
+                </AlertDescription>
+              </Alert>
+            )}
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-4 py-4">
