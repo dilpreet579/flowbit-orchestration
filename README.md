@@ -1,6 +1,6 @@
 # Flowbit Orchestration
 
-A modern web application for orchestrating and managing workflows, built with Next.js, TypeScript, and SQLite.
+A modern web application for orchestrating and managing Langflow workflows, built with Next.js, TypeScript, and SQLite.
 
 ## Features
 
@@ -11,6 +11,8 @@ A modern web application for orchestrating and managing workflows, built with Ne
 - 💾 SQLite database for data persistence
 - 🔌 Webhook integration support
 - 🎨 Dark/Light theme support
+- ⏰ Scheduled workflow execution with cron
+- 📈 Execution history and analytics
 
 ## Prerequisites
 
@@ -21,12 +23,14 @@ A modern web application for orchestrating and managing workflows, built with Ne
 ## Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **UI**: Tailwind CSS, Radix UI
+- **UI**: Tailwind CSS, Radix UI, shadcn/ui
 - **Database**: SQLite
 - **State Management**: React Hooks
 - **Form Handling**: React Hook Form with Zod validation
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Development**: TypeScript, ESLint
+- **Scheduling**: node-cron
+- **Workflow Engine**: Langflow
 
 ## Getting Started
 
@@ -42,7 +46,7 @@ A modern web application for orchestrating and managing workflows, built with Ne
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file in the root directory with the following variables:
+   Create a `.env` file in the root directory with the following variables:
    ```
    # Add your environment variables here
 
@@ -62,7 +66,7 @@ A modern web application for orchestrating and managing workflows, built with Ne
    pnpm dev
    ```
 
-5. Start Langflow services (optional, for workflow development):
+5. Start Langflow services:
    ```bash
    docker-compose up -d
    ```
@@ -72,11 +76,16 @@ A modern web application for orchestrating and managing workflows, built with Ne
 ```
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
+│   │   ├── trigger/      # Workflow trigger endpoints
+│   │   ├── webhook/      # Webhook endpoints
+│   │   └── messages/     # Message management
 │   └── (routes)/         # Page routes
 ├── components/            # React components
 │   ├── ui/               # Reusable UI components
 │   └── ...               # Feature-specific components
 ├── lib/                   # Utility functions and shared code
+│   ├── db.ts             # Database operations
+│   └── cron.ts           # Scheduling functionality
 ├── public/               # Static assets
 ├── styles/               # Global styles
 └── flows/                # Langflow workflow definitions
@@ -91,13 +100,55 @@ A modern web application for orchestrating and managing workflows, built with Ne
 
 ## Database
 
-The application uses SQLite for data persistence. The database file is automatically created in the `data` directory when the application starts.
+The application uses SQLite for data persistence. The database file is automatically created in the `data` directory when the application starts. The database stores:
+
+- Workflow executions
+- Execution logs
+- Node execution data
+- Scheduled jobs
 
 ## API Endpoints
 
-- `/api/trigger` - Trigger workflow execution
-- `/api/messages` - Message management
-- `/api/hooks` - Webhook management
+### Workflow Management
+- `POST /api/trigger` - Trigger workflow execution
+- `GET /api/trigger` - Get workflow status
+
+### Webhooks
+- `POST /api/webhook/langflow/{workflowId}` - Webhook endpoint for Langflow workflows
+- `GET /api/webhook/langflow/{workflowId}` - Webhook documentation
+
+### Messages
+- `GET /api/messages` - Get workflow messages
+- `POST /api/messages` - Create new message
+
+## Workflow Scheduling
+
+The application supports scheduling workflows using cron expressions. Features include:
+
+- Cron expression validation
+- Next run time calculation
+- Persistent job storage
+- Automatic job recovery on restart
+
+Example cron expressions:
+- `0 0 * * *` - Every day at midnight
+- `0 9 * * 1-5` - Every weekday at 9:00 AM
+- `*/15 * * * *` - Every 15 minutes
+
+## Webhook Integration
+
+Webhooks can be used to trigger workflows from external systems. Each workflow has a unique webhook URL:
+
+```
+POST https://your-domain/api/webhook/langflow/{workflowId}
+Content-Type: application/json
+
+{
+  "data": {
+    "input": "value"
+  }
+}
+```
 
 ## Contributing
 
@@ -122,3 +173,4 @@ For support, please open an issue in the GitHub repository or contact the mainta
 - [Radix UI](https://www.radix-ui.com/)
 - [Langflow](https://github.com/logspace-ai/langflow)
 - [Langflow Docs](https://docs.langflow.org/)
+- [node-cron](https://github.com/node-cron/node-cron)
