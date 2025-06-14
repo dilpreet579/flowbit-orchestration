@@ -14,6 +14,11 @@ interface CronJob {
   active: boolean
 }
 
+// Extended ScheduledTask type to include nextDate method
+interface ExtendedScheduledTask extends ScheduledTask {
+  nextDate(): Date
+}
+
 // Store for active cron jobs
 const activeJobs: Record<string, ScheduledTask> = {}
 
@@ -100,7 +105,7 @@ async function executeJob(job: CronJob) {
 // Calculate the next run time for a cron expression
 function calculateNextRun(cronExpression: string): string {
   try {
-    const task = schedule(cronExpression, () => {})
+    const task = schedule(cronExpression, () => {}) as ExtendedScheduledTask
     const nextDate = task.nextDate()
     task.stop()
     return nextDate.toISOString()
