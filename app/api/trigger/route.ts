@@ -22,7 +22,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 7
   }
 }
 
-async function triggerLangflowWorkflow(flowId: string, payload?: any) {
+async function triggerLangflowWorkflow(flowId: string, payload?: any, triggerType?: string) {
   // Check if environment variables are set
   const langflowBaseUrl = process.env.LANGFLOW_BASE_URL
   const langflowApiKey = process.env.LANGFLOW_API_KEY
@@ -69,7 +69,7 @@ async function triggerLangflowWorkflow(flowId: string, payload?: any) {
       flow_name: flowName,
       status: "RUNNING",
       timestamp: timestamp,
-      trigger_type: payload?.triggerType || "manual",
+      trigger_type: triggerType || "manual",
       inputs: payload?.inputPayload || {},
       tags: flowDetails.tags || [],
       logs: [
@@ -180,6 +180,16 @@ async function scheduleWorkflow(workflowId: string, engine: string, cronExpressi
   }
 }
 
+// Handle webhook triggers
+export async function triggerWorkflow(workflowId: string, engine: string, triggerType: string, payload?: any) {
+  // Handle different trigger types
+  if (engine === "langflow") {
+    return await triggerLangflowWorkflow(workflowId, payload, triggerType)
+  } else {
+    throw new Error("Unsupported engine or trigger type")
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { workflowId, engine, triggerType, payload, cronExpression } = await request.json()
@@ -194,9 +204,10 @@ export async function POST(request: Request) {
 
     // Handle different trigger types
     if (triggerType === "schedule" && cronExpression) {
+      console.log("Scheduling workflow:", workflowId, engine, cronExpression, payload)
       result = await scheduleWorkflow(workflowId, engine, cronExpression, payload)
     } else if (engine === "langflow") {
-      result = await triggerLangflowWorkflow(workflowId, payload)
+      result = await triggerLangflowWorkflow(workflowId, payload, triggerType)
     } else {
       return NextResponse.json({ error: "Unsupported engine" }, { status: 400 })
     }
