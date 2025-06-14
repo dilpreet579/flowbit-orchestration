@@ -50,6 +50,8 @@ A modern web application for orchestrating and managing workflows, built with Ne
    # N8N_BASE_URL=http://localhost:5678
    # N8N_API_KEY=your_n8n_api_key_here
 
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+
    # Langflow Configuration  
    LANGFLOW_BASE_URL=http://localhost:7860
    LANGFLOW_API_KEY=your_langflow_api_key_here
@@ -118,4 +120,5 @@ For support, please open an issue in the GitHub repository or contact the mainta
 - [Next.js](https://nextjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Radix UI](https://www.radix-ui.com/)
-- [Langflow](https://github.com/logspace-ai/langflow) 
+- [Langflow](https://github.com/logspace-ai/langflow)
+- [Langflow Docs](https://docs.langflow.org/)
